@@ -5,7 +5,7 @@ from trabajador import Trabajador
 from supervisor import Supervisor
 from area_de_trabajo import AreaDeTrabajo
 from labor import Labor
-from asignaciones import asignar_labor
+from asignacion import Asignacion
 
 
 if __name__ == "__main__":
@@ -55,10 +55,10 @@ if __name__ == "__main__":
     )
 
     print("--- Intento de asignacion para Ana (apta) ---")
-    asignacion_ana = asignar_labor(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
+    asignacion_ana = Asignacion.crear(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
 
     print("\n--- Intento de asignacion para Beto (credencial vencida) ---")
-    asignar_labor(beto, labor_cocinar, franja="Manana", fecha=fecha_hoy)
+    Asignacion.crear(beto, labor_cocinar, franja="Manana", fecha=fecha_hoy)
 
     print("\n--- Un Supervisor formaliza la asignacion de Ana ---")
     carla = Supervisor(
