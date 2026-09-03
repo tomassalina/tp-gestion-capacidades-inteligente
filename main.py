@@ -1,16 +1,60 @@
-from entities.Personal import Personal
+from datetime import date
 
-# Tu implementacion va aqui
-def hola_mundo():
-    return "hola_mundo"
-
-
-def main():
-    # Aqui ejecutas tus soluciones
-    print(hola_mundo())
-    personal1 = Personal("Juan", "Perez", "juanperez@gmail.com", "2026-08-27", 20)
+from credencial_profesional import CredencialProfesional
+from trabajador import Trabajador
+from area_de_trabajo import AreaDeTrabajo
+from labor import Labor
+from asignaciones import asignar_labor
 
 
-# No cambiar a partir de aqui
 if __name__ == "__main__":
-    main()
+    fecha_hoy = date(2026, 9, 2)
+
+    area_cocina = AreaDeTrabajo(
+        nombre="Cocina",
+        credenciales_obligatorias=["Carnet de Manipulacion de Alimentos"],
+        capacidad_por_franja={"Manana": 1, "Tarde": 2, "Noche": 1},
+    )
+
+    credencial_vigente = CredencialProfesional(
+        nombre="Carnet de Manipulacion de Alimentos",
+        fecha_obtencion=date(2025, 1, 1),
+        fecha_caducidad=date(2027, 1, 1),
+    )
+    credencial_vencida = CredencialProfesional(
+        nombre="Carnet de Manipulacion de Alimentos",
+        fecha_obtencion=date(2020, 1, 1),
+        fecha_caducidad=date(2021, 1, 1),
+    )
+
+    ana = Trabajador(
+        id=1,
+        nombre="Ana",
+        habilidades=["Coccion"],
+        credenciales=[credencial_vigente],
+        horas_maximas_semana=20,
+    )
+
+    beto = Trabajador(
+        id=2,
+        nombre="Beto",
+        habilidades=["Coccion"],
+        credenciales=[credencial_vencida],
+        horas_maximas_semana=20,
+    )
+
+    labor_cocinar = Labor(
+        id=1,
+        titulo="Preparar almuerzo",
+        descripcion="Cocinar el menu del dia",
+        duracion_horas=4,
+        habilidades_requeridas=["Coccion"],
+        credenciales_requeridas=["Carnet de Manipulacion de Alimentos"],
+        area=area_cocina,
+    )
+
+    print("--- Intento de asignacion para Ana (apta) ---")
+    asignar_labor(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
+
+    print("\n--- Intento de asignacion para Beto (credencial vencida) ---")
+    asignar_labor(beto, labor_cocinar, franja="Manana", fecha=fecha_hoy)
