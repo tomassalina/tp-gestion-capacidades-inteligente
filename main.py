@@ -2,6 +2,7 @@ from datetime import date
 
 from credencial_profesional import CredencialProfesional
 from trabajador import Trabajador
+from supervisor import Supervisor
 from area_de_trabajo import AreaDeTrabajo
 from labor import Labor
 from asignaciones import asignar_labor
@@ -54,7 +55,19 @@ if __name__ == "__main__":
     )
 
     print("--- Intento de asignacion para Ana (apta) ---")
-    asignar_labor(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
+    asignacion_ana = asignar_labor(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
 
     print("\n--- Intento de asignacion para Beto (credencial vencida) ---")
     asignar_labor(beto, labor_cocinar, franja="Manana", fecha=fecha_hoy)
+
+    print("\n--- Un Supervisor formaliza la asignacion de Ana ---")
+    carla = Supervisor(
+        id=3,
+        nombre="Carla",
+        habilidades=[],
+        credenciales=[],
+        horas_maximas_semana=20,
+    )
+    print(f"Estado antes de aprobar: {asignacion_ana.estado}")
+    carla.aprobar_asignacion(asignacion_ana)
+    print(f"Estado despues de aprobar: {asignacion_ana.estado}")
