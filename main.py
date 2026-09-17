@@ -1,20 +1,28 @@
 from datetime import date
 
 from credencial_profesional import CredencialProfesional
+from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
+from franja import Franja
 from trabajador import Trabajador
 from supervisor import Supervisor
 from area_de_trabajo import AreaDeTrabajo
 from labor import Labor
-from asignacion import Asignacion
+from sistema import Sistema
 
 
 if __name__ == "__main__":
     fecha_hoy = date(2026, 9, 2)
 
+    habilidad_coccion = Habilidad("Coccion")
+
+    franja_manana = Franja("Manana", capacidad=1)
+    franja_tarde = Franja("Tarde", capacidad=2)
+    franja_noche = Franja("Noche", capacidad=1)
+
     area_cocina = AreaDeTrabajo(
         nombre="Cocina",
         credenciales_obligatorias=["Carnet de Manipulacion de Alimentos"],
-        capacidad_por_franja={"Manana": 1, "Tarde": 2, "Noche": 1},
+        franjas=[franja_manana, franja_tarde, franja_noche],
     )
 
     credencial_vigente = CredencialProfesional(
@@ -31,7 +39,7 @@ if __name__ == "__main__":
     ana = Trabajador(
         id=1,
         nombre="Ana",
-        habilidades=["Coccion"],
+        habilidades=[HabilidadDeTrabajador(habilidad_coccion, NivelHabilidad.AVANZADO)],
         credenciales=[credencial_vigente],
         horas_maximas_semana=20,
     )
@@ -39,7 +47,7 @@ if __name__ == "__main__":
     beto = Trabajador(
         id=2,
         nombre="Beto",
-        habilidades=["Coccion"],
+        habilidades=[HabilidadDeTrabajador(habilidad_coccion, NivelHabilidad.INTERMEDIO)],
         credenciales=[credencial_vencida],
         horas_maximas_semana=20,
     )
@@ -49,18 +57,11 @@ if __name__ == "__main__":
         titulo="Preparar almuerzo",
         descripcion="Cocinar el menu del dia",
         duracion_horas=4,
-        habilidades_requeridas=["Coccion"],
+        habilidades_requeridas=[HabilidadRequerida(habilidad_coccion, NivelHabilidad.INTERMEDIO)],
         credenciales_requeridas=["Carnet de Manipulacion de Alimentos"],
         area=area_cocina,
     )
 
-    print("--- Intento de asignacion para Ana (apta) ---")
-    asignacion_ana = Asignacion.crear(ana, labor_cocinar, franja="Manana", fecha=fecha_hoy)
-
-    print("\n--- Intento de asignacion para Beto (credencial vencida) ---")
-    Asignacion.crear(beto, labor_cocinar, franja="Manana", fecha=fecha_hoy)
-
-    print("\n--- Un Supervisor formaliza la asignacion de Ana ---")
     carla = Supervisor(
         id=3,
         nombre="Carla",
@@ -68,6 +69,19 @@ if __name__ == "__main__":
         credenciales=[],
         horas_maximas_semana=20,
     )
-    print(f"Estado antes de aprobar: {asignacion_ana.estado}")
-    carla.aprobar_asignacion(asignacion_ana)
-    print(f"Estado despues de aprobar: {asignacion_ana.estado}")
+
+    sistema = Sistema(trabajadores=[ana, beto, carla], areas=[area_cocina], labores=[labor_cocinar])
+
+    print("--- Ana y Beto solicitan la labor durante la semana ---")
+    sistema.solicitar_asignacion(ana, labor_cocinar, franja_manana, fecha_hoy)
+    sistema.solicitar_asignacion(beto, labor_cocinar, franja_manana, fecha_hoy)
+
+    print("\n--- Carla (supervisora) corre manualmente las acciones semanales del sistema ---")
+    carla.ejecutar_acciones_del_sistema(sistema)
+
+    print("\n--- Carla aprueba las asignaciones que quedaron pendientes ---")
+    carla.aprobar_asignaciones_pendientes(sistema)
+
+    print("\n--- Resultado final ---")
+    for asignacion in sistema.get_asignaciones():
+        print(f"{asignacion.get_trabajador().get_nombre()} -> {asignacion.get_labor().get_titulo()} ({asignacion.get_estado()})")
