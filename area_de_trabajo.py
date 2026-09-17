@@ -1,15 +1,27 @@
 class AreaDeTrabajo:
 
-    def __init__(self, nombre, credenciales_obligatorias, capacidad_por_franja):
-        self.nombre = nombre
-        self.credenciales_obligatorias = credenciales_obligatorias
-        self.capacidad_por_franja = capacidad_por_franja
-        self.trabajadores_por_franja = {}
+    def __init__(self, nombre, credenciales_obligatorias, franjas):
+        self._nombre = nombre
+        self._credenciales_obligatorias = credenciales_obligatorias
+        self._franjas = franjas
 
-    def tiene_lugar(self, franja):
-        ocupados = self.trabajadores_por_franja.get(franja, 0)
-        capacidad = self.capacidad_por_franja.get(franja, 0)
-        return ocupados < capacidad
+    def get_nombre(self):
+        return self._nombre
 
-    def ocupar_lugar(self, franja):
-        self.trabajadores_por_franja[franja] = self.trabajadores_por_franja.get(franja, 0) + 1
+    def set_nombre(self, nombre):
+        self._nombre = nombre
+
+    def get_credenciales_obligatorias(self):
+        return self._credenciales_obligatorias
+
+    def set_credenciales_obligatorias(self, credenciales_obligatorias):
+        self._credenciales_obligatorias = credenciales_obligatorias
+
+    def get_franjas(self):
+        return self._franjas
+
+    def set_franjas(self, franjas):
+        self._franjas = franjas
+
+    def buscar_franja(self, nombre_franja):
+        return next(filter(lambda franja: franja.get_nombre() == nombre_franja, self._franjas), None)
