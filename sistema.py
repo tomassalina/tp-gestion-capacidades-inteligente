@@ -1,4 +1,5 @@
 from asignacion import Asignacion
+from trabajador import Trabajador
 
 
 class Sistema:
@@ -38,6 +39,18 @@ class Sistema:
 
     def solicitar_asignacion(self, trabajador, labor, franja, fecha):
         self._solicitudes_pendientes.append((trabajador, labor, franja, fecha))
+
+    def registrar_personal(self, id, nombre, horas_max, **atributos):
+        nuevo_trabajador = Trabajador(
+            id=id,
+            nombre=nombre,
+            habilidades=[],
+            credenciales=[],
+            horas_maximas_semana=horas_max,
+            **atributos,
+        )
+        self._trabajadores.append(nuevo_trabajador)
+        return nuevo_trabajador
 
     def ejecutar_acciones_semanales(self):
         self._procesar_solicitudes_pendientes()
