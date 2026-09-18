@@ -56,3 +56,15 @@ Su misión es diseñar y desarrollar un prototipo de este *Sistema de Gestión d
 
 - Se recomienda el uso de la librería estándar de Python (como datetime o math) para optimizar tareas específicas y evitar la redacción innecesaria de funciones ya existentes.
 
+## Extensión de Consigna: Capacidades Inteligentes (`**kwargs`)
+
+Registro de nuevo personal con atributos opcionales:
+
+```python
+def registrar_personal(self, id, nombre, horas_max, **atributos)
+```
+
+Registra un nuevo miembro del personal con sus atributos opcionales.
+
+**Por qué:** El personal puede tener atributos variables según el rol: idiomas, área de origen, turnos preferidos, certificaciones iniciales. Con `**kwargs` el sistema almacena esos atributos como un diccionario interno sin necesidad de definir cada campo por separado, y el código cliente puede consultar atributo por clave.
+

@@ -72,7 +72,23 @@ if __name__ == "__main__":
 
     sistema = Sistema(trabajadores=[ana, beto, carla], areas=[area_cocina], labores=[labor_cocinar])
 
-    print("--- Ana y Beto solicitan la labor durante la semana ---")
+    print("--- Registro de personal con atributos opcionales (**kwargs) ---")
+    diego = sistema.registrar_personal(
+        id=4,
+        nombre="Diego",
+        horas_max=15,
+        idioma="Ingles",
+        area_origen="Cordoba",
+        turno_preferido="Tarde",
+    )
+    print(
+        f"{diego.get_nombre()} registrado. "
+        f"Idioma: {diego.get_atributo('idioma')}, "
+        f"area de origen: {diego.get_atributo('area_origen')}, "
+        f"certificacion: {diego.get_atributo('certificacion', 'sin certificacion inicial')}"
+    )
+
+    print("\n--- Ana y Beto solicitan la labor durante la semana ---")
     sistema.solicitar_asignacion(ana, labor_cocinar, franja_manana, fecha_hoy)
     sistema.solicitar_asignacion(beto, labor_cocinar, franja_manana, fecha_hoy)
 

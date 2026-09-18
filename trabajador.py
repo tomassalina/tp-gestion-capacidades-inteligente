@@ -1,6 +1,6 @@
 class Trabajador:
 
-    def __init__(self, id, nombre, habilidades, credenciales, horas_maximas_semana):
+    def __init__(self, id, nombre, habilidades, credenciales, horas_maximas_semana, **atributos):
         if horas_maximas_semana <= 0:
             raise ValueError("Las horas maximas por semana deben ser mayores a 0")
 
@@ -10,6 +10,7 @@ class Trabajador:
         self._credenciales = credenciales
         self._horas_maximas_semana = horas_maximas_semana
         self._horas_asignadas = 0
+        self._atributos = atributos
 
     def get_id(self):
         return self._id
@@ -40,6 +41,12 @@ class Trabajador:
 
     def get_horas_asignadas(self):
         return self._horas_asignadas
+
+    def get_atributos(self):
+        return self._atributos
+
+    def get_atributo(self, clave, valor_por_defecto=None):
+        return self._atributos.get(clave, valor_por_defecto)
 
     def tiene_habilidades(self, habilidades_requeridas):
         return all(map(
