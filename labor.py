@@ -50,3 +50,17 @@ class Labor:
 
     def set_area(self, area):
         self._area = area
+
+
+def test_labor_duracion_invalida_lanza_value_error():
+    import pytest
+
+    with pytest.raises(ValueError):
+        Labor(1, "Titulo", "Descripcion", 0, [], [], None)
+
+
+def test_labor_se_crea_correctamente():
+    labor = Labor(1, "Preparar almuerzo", "Cocinar el menu", 4, [], ["Carnet"], "Cocina")
+    assert labor.get_titulo() == "Preparar almuerzo"
+    assert labor.get_duracion_horas() == 4
+    assert labor.get_area() == "Cocina"

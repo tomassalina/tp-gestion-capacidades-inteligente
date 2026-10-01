@@ -98,6 +98,39 @@ if __name__ == "__main__":
     print("\n--- Carla aprueba las asignaciones que quedaron pendientes ---")
     carla.aprobar_asignaciones_pendientes(sistema)
 
+    print("\n--- Resultado tras aprobaciones ---")
+    for asignacion in sistema.obtener_asignaciones():
+        print(f"{asignacion.get_trabajador().get_nombre()} -> {asignacion.get_labor().get_titulo()} ({asignacion.get_estado()})")
+
+    print("\n--- Sistema genera sugerencias automaticas para una nueva fecha ---")
+    fecha_siguiente = date(2026, 9, 9)
+    sugerencias = sistema.generar_sugerencias(fecha_siguiente)
+    for sugerencia in sugerencias:
+        print(
+            f"Sugerencia: {sugerencia.get_trabajador().get_nombre()} -> {sugerencia.get_labor().get_titulo()} "
+            f"en franja '{sugerencia.get_franja().get_nombre()}' (estado: {sugerencia.get_estado()})"
+        )
+
+    print("\n--- Carla reasigna la primera sugerencia a otro trabajador ---")
+    if sugerencias:
+        primera_sugerencia = sugerencias[0]
+        print(f"Trabajador original: {primera_sugerencia.get_trabajador().get_nombre()}")
+        carla.reasignar_asignacion(primera_sugerencia, diego)
+        print(f"Trabajador reasignado: {primera_sugerencia.get_trabajador().get_nombre()}")
+
+    print("\n--- Carla agrega una nueva credencial obligatoria al area ---")
+    carla.agregar_regla_area(area_cocina, "Certificado de Higiene")
+    print(f"Credenciales obligatorias de '{area_cocina.get_nombre()}': {area_cocina.get_credenciales_obligatorias()}")
+
+    print("\n--- Ciclo semanal: se borran todas las asignaciones y el algoritmo decide de nuevo ---")
+    nuevas_sugerencias = sistema.ciclo_semanal(fecha_siguiente)
+    print(f"Nuevas sugerencias generadas: {len(nuevas_sugerencias)}")
+    for sugerencia in nuevas_sugerencias:
+        print(
+            f"Nueva sugerencia: {sugerencia.get_trabajador().get_nombre()} -> {sugerencia.get_labor().get_titulo()} "
+            f"en franja '{sugerencia.get_franja().get_nombre()}' (estado: {sugerencia.get_estado()})"
+        )
+
     print("\n--- Resultado final ---")
-    for asignacion in sistema.get_asignaciones():
+    for asignacion in sistema.obtener_asignaciones():
         print(f"{asignacion.get_trabajador().get_nombre()} -> {asignacion.get_labor().get_titulo()} ({asignacion.get_estado()})")

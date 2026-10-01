@@ -1,17 +1,17 @@
-from asignacion import Asignacion
+from asignacion import Asignacion, EstadoAsignacion, TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError
 from trabajador import Trabajador
+
+ERRORES_ASIGNACION = (TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError)
 
 
 class Sistema:
-    """Automatiza, una vez por semana, el procesamiento de solicitudes de asignacion
-    y el reinicio de las horas de los trabajadores. Un Supervisor puede disparar
-    estas mismas acciones manualmente a traves de sus propios metodos."""
 
     def __init__(self, trabajadores=None, areas=None, labores=None):
         self._trabajadores = trabajadores or []
         self._areas = areas or []
         self._labores = labores or []
         self._solicitudes_pendientes = []
+        self._asignaciones = []
 
     def get_trabajadores(self):
         return self._trabajadores
@@ -31,8 +31,8 @@ class Sistema:
     def set_labores(self, labores):
         self._labores = labores
 
-    def get_asignaciones(self):
-        return Asignacion.todas
+    def obtener_asignaciones(self):
+        return self._asignaciones
 
     def get_solicitudes_pendientes(self):
         return self._solicitudes_pendientes
@@ -57,8 +57,144 @@ class Sistema:
         self._reiniciar_horas_trabajadores()
 
     def _procesar_solicitudes_pendientes(self):
-        list(map(lambda solicitud: Asignacion.crear(*solicitud), self._solicitudes_pendientes))
+        for solicitud in self._solicitudes_pendientes:
+            trabajador, labor, franja, fecha = solicitud
+            try:
+                nueva_asignacion = Asignacion.crear(trabajador, labor, franja, fecha, self._asignaciones)
+            except ERRORES_ASIGNACION as e:
+                print(f"No se pudo procesar la solicitud de {trabajador.get_nombre()} para '{labor.get_titulo()}': {e}")
+            else:
+                self._asignaciones.append(nueva_asignacion)
         self._solicitudes_pendientes = []
 
     def _reiniciar_horas_trabajadores(self):
-        list(map(lambda trabajador: trabajador.reiniciar_horas(), self._trabajadores))
+        for trabajador in self._trabajadores:
+            trabajador.reiniciar_horas()
+
+    def _tiene_asignacion_aprobada(self, labor, franja, fecha):
+        for asignacion in self._asignaciones:
+            if asignacion.get_labor() == labor and asignacion.get_franja() == franja and asignacion.get_fecha() == fecha:
+                if asignacion.get_estado() == EstadoAsignacion.APROBADA:
+                    return True
+        return False
+
+    def buscar_trabajadores_disponibles(self, labor, franja, fecha):
+        candidatos = []
+        for trabajador in self._trabajadores:
+            apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
+            apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
+            apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
+            if not (apto_habilidades and apto_credenciales_labor and apto_credenciales_area):
+                continue
+            if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
+                continue
+            if not franja.tiene_lugar():
+                continue
+            if self._tiene_asignacion_aprobada(labor, franja, fecha):
+                continue
+            candidatos.append(trabajador)
+        return candidatos
+
+    def generar_sugerencias(self, fecha):
+        nuevas_sugerencias = []
+        for labor in self._labores:
+            for franja in labor.get_area().get_franjas():
+                if self._tiene_asignacion_aprobada(labor, franja, fecha):
+                    continue
+                candidatos = self.buscar_trabajadores_disponibles(labor, franja, fecha)
+                if len(candidatos) == 0:
+                    continue
+                candidato = candidatos[0]
+                try:
+                    sugerencia = Asignacion.crear(candidato, labor, franja, fecha, self._asignaciones, estado=EstadoAsignacion.SUGERIDA)
+                except ERRORES_ASIGNACION as e:
+                    print(f"No se pudo generar sugerencia para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}': {e}")
+                else:
+                    self._asignaciones.append(sugerencia)
+                    nuevas_sugerencias.append(sugerencia)
+        return nuevas_sugerencias
+
+    def ciclo_semanal(self, fecha):
+        self._asignaciones = []
+        self._reiniciar_horas_trabajadores()
+        return self.generar_sugerencias(fecha)
+
+
+from datetime import date
+from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
+from franja import Franja
+from labor import Labor
+from area_de_trabajo import AreaDeTrabajo
+
+
+def _armar_sistema():
+    habilidad = Habilidad("Coccion")
+    franja = Franja("Manana", capacidad=2)
+    area = AreaDeTrabajo("Cocina", [], [franja])
+    labor = Labor(1, "Cocinar", "Cocinar el menu", 4, [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)], [], area)
+    trabajador = Trabajador(1, "Ana", [HabilidadDeTrabajador(habilidad, NivelHabilidad.BASICO)], [], 20)
+    sistema = Sistema(trabajadores=[trabajador], areas=[area], labores=[labor])
+    return sistema, trabajador, labor, franja
+
+
+def test_buscar_trabajadores_disponibles_encuentra_apto():
+    sistema, trabajador, labor, franja = _armar_sistema()
+    disponibles = sistema.buscar_trabajadores_disponibles(labor, franja, date(2026, 1, 1))
+    assert disponibles == [trabajador]
+
+
+def test_generar_sugerencias_crea_asignacion_sugerida():
+    sistema, trabajador, labor, franja = _armar_sistema()
+    sugerencias = sistema.generar_sugerencias(date(2026, 1, 1))
+    assert len(sugerencias) == 1
+    assert sugerencias[0].get_estado() == EstadoAsignacion.SUGERIDA
+    assert sugerencias[0].get_trabajador() == trabajador
+    assert trabajador.get_horas_asignadas() == labor.get_duracion_horas()
+
+
+def test_generar_sugerencias_no_sobreasigna_mismo_trabajador_en_una_corrida():
+    habilidad = Habilidad("Coccion")
+    franja_manana = Franja("Manana", capacidad=5)
+    franja_tarde = Franja("Tarde", capacidad=5)
+    area = AreaDeTrabajo("Cocina", [], [franja_manana, franja_tarde])
+    requisito = [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)]
+    labor_1 = Labor(1, "Cocinar", "Cocinar el menu", 4, requisito, [], area)
+    labor_2 = Labor(2, "Limpiar", "Limpiar la cocina", 4, requisito, [], area)
+    trabajador = Trabajador(1, "Ana", [HabilidadDeTrabajador(habilidad, NivelHabilidad.BASICO)], [], 6)
+    sistema = Sistema(trabajadores=[trabajador], areas=[area], labores=[labor_1, labor_2])
+    sugerencias = sistema.generar_sugerencias(date(2026, 1, 1))
+    assert len(sugerencias) == 1
+    assert trabajador.get_horas_asignadas() == 4
+
+
+def test_ciclo_semanal_descarta_sugeridas_y_regenera():
+    sistema, trabajador, labor, franja = _armar_sistema()
+    sistema.generar_sugerencias(date(2026, 1, 1))
+    nuevas = sistema.ciclo_semanal(date(2026, 1, 2))
+    assert len(sistema.obtener_asignaciones()) == 1
+    assert len(nuevas) == 1
+    assert trabajador.get_horas_asignadas() == labor.get_duracion_horas()
+
+
+def test_ciclo_semanal_borra_tambien_las_aprobadas():
+    sistema, trabajador, labor, franja = _armar_sistema()
+    aprobada = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    aprobada.aprobar()
+    sistema.obtener_asignaciones().append(aprobada)
+    sistema.ciclo_semanal(date(2026, 1, 2))
+    assert aprobada not in sistema.obtener_asignaciones()
+
+
+def test_registrar_personal_con_atributos_opcionales():
+    sistema, _, _, _ = _armar_sistema()
+    nuevo = sistema.registrar_personal(id=5, nombre="Diego", horas_max=15, idioma="Ingles")
+    assert nuevo.get_atributo("idioma") == "Ingles"
+    assert nuevo in sistema.get_trabajadores()
+
+
+def test_generar_sugerencias_omite_candidato_con_asignacion_duplicada():
+    sistema, trabajador, labor, franja = _armar_sistema()
+    existente = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    sistema.obtener_asignaciones().append(existente)
+    sugerencias = sistema.generar_sugerencias(date(2026, 1, 1))
+    assert sugerencias == []

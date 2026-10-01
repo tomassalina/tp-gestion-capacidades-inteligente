@@ -1,3 +1,8 @@
+from datetime import date
+from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
+from credencial_profesional import CredencialProfesional
+
+
 class Trabajador:
 
     def __init__(self, id, nombre, habilidades, credenciales, horas_maximas_semana, **atributos):
@@ -49,23 +54,19 @@ class Trabajador:
         return self._atributos.get(clave, valor_por_defecto)
 
     def tiene_habilidades(self, habilidades_requeridas):
-        return all(map(
-            lambda requerida: any(
-                propia.get_habilidad() == requerida.get_habilidad()
-                and propia.cumple_nivel_minimo(requerida.get_nivel_minimo())
+        return all(
+            any(
+                propia.get_habilidad() == requerida.get_habilidad() and propia.cumple_nivel_minimo(requerida.get_nivel_minimo())
                 for propia in self._habilidades
-            ),
-            habilidades_requeridas,
-        ))
+            )
+            for requerida in habilidades_requeridas
+        )
 
     def tiene_credenciales_activas(self, credenciales_requeridas, fecha):
-        return all(map(
-            lambda nombre_requerido: any(
-                credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha)
-                for credencial in self._credenciales
-            ),
-            credenciales_requeridas,
-        ))
+        return all(
+            any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self._credenciales)
+            for nombre_requerido in credenciales_requeridas
+        )
 
     def puede_tomar_horas(self, horas_a_sumar):
         return self._horas_asignadas + horas_a_sumar <= self._horas_maximas_semana
@@ -75,3 +76,39 @@ class Trabajador:
 
     def reiniciar_horas(self):
         self._horas_asignadas = 0
+
+
+def test_horas_maximas_invalidas_lanza_value_error():
+    import pytest
+
+    with pytest.raises(ValueError):
+        Trabajador(1, "Ana", [], [], 0)
+
+
+def test_tiene_habilidades_respeta_nivel_minimo():
+    soldadura = Habilidad("Soldadura")
+    trabajador = Trabajador(1, "Ana", [HabilidadDeTrabajador(soldadura, NivelHabilidad.BASICO)], [], 20)
+    requerida_baja = [HabilidadRequerida(soldadura, NivelHabilidad.BASICO)]
+    requerida_alta = [HabilidadRequerida(soldadura, NivelHabilidad.AVANZADO)]
+    assert trabajador.tiene_habilidades(requerida_baja)
+    assert not trabajador.tiene_habilidades(requerida_alta)
+
+
+def test_puede_tomar_horas_respeta_limite_semanal():
+    trabajador = Trabajador(1, "Ana", [], [], 10)
+    trabajador.sumar_horas(8)
+    assert not trabajador.puede_tomar_horas(4)
+    assert trabajador.puede_tomar_horas(2)
+
+
+def test_atributos_opcionales_por_kwargs():
+    trabajador = Trabajador(1, "Diego", [], [], 15, idioma="Ingles")
+    assert trabajador.get_atributo("idioma") == "Ingles"
+    assert trabajador.get_atributo("inexistente", "default") == "default"
+
+
+def test_tiene_credenciales_activas_respeta_todas_las_requeridas():
+    vigente = CredencialProfesional("Carnet", date(2025, 1, 1), date(2027, 1, 1))
+    trabajador = Trabajador(1, "Ana", [], [vigente], 20)
+    assert trabajador.tiene_credenciales_activas(["Carnet"], date(2026, 1, 1))
+    assert not trabajador.tiene_credenciales_activas(["Carnet", "Otra"], date(2026, 1, 1))

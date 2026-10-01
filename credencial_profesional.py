@@ -1,3 +1,6 @@
+from datetime import date
+
+
 class CredencialProfesional:
 
     def __init__(self, nombre, fecha_obtencion, fecha_caducidad):
@@ -28,3 +31,20 @@ class CredencialProfesional:
 
     def esta_activa(self, fecha_referencia):
         return self._fecha_obtencion <= fecha_referencia <= self._fecha_caducidad
+
+
+def test_credencial_invalida_lanza_value_error():
+    import pytest
+
+    with pytest.raises(ValueError):
+        CredencialProfesional("Certificado", date(2025, 1, 1), date(2024, 1, 1))
+
+
+def test_credencial_esta_activa_dentro_del_rango():
+    credencial = CredencialProfesional("Certificado", date(2025, 1, 1), date(2026, 1, 1))
+    assert credencial.esta_activa(date(2025, 6, 1))
+
+
+def test_credencial_no_esta_activa_fuera_del_rango():
+    credencial = CredencialProfesional("Certificado", date(2025, 1, 1), date(2026, 1, 1))
+    assert not credencial.esta_activa(date(2027, 1, 1))
