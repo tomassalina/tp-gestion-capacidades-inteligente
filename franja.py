@@ -1,10 +1,17 @@
+class TipoFranja:
+
+    MANIANA = "Manana"
+    TARDE = "Tarde"
+    NOCHE = "Noche"
+
+
 class Franja:
 
     def __init__(self, nombre, capacidad):
         if not isinstance(nombre, str):
             raise TypeError("nombre debe ser un string")
-        if nombre.strip() == "":
-            raise ValueError("nombre no puede estar vacio")
+        if nombre not in (TipoFranja.MANIANA, TipoFranja.TARDE, TipoFranja.NOCHE):
+            raise ValueError("nombre debe ser Manana, Tarde o Noche")
         if not isinstance(capacidad, int):
             raise TypeError("capacidad debe ser un int")
         if capacidad <= 0:
@@ -41,8 +48,15 @@ class Franja:
 
 
 def test_franja_tiene_lugar_inicialmente():
-    franja = Franja("Manana", capacidad=2)
+    franja = Franja(TipoFranja.MANIANA, capacidad=2)
     assert franja.tiene_lugar()
+
+
+def test_franja_nombre_fuera_del_tipo_lanza_value_error():
+    import pytest
+
+    with pytest.raises(ValueError):
+        Franja("Madrugada", capacidad=2)
 
 
 def test_franja_tipos_o_valores_invalidos_lanza_error():

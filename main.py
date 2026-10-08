@@ -3,7 +3,7 @@ from asignacion import TrabajadorNoAptoError
 
 from credencial_profesional import CredencialProfesional
 from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
-from franja import Franja
+from franja import Franja, TipoFranja
 from trabajador import Trabajador
 from supervisor import Supervisor
 from area_de_trabajo import AreaDeTrabajo
@@ -16,9 +16,9 @@ if __name__ == "__main__":
 
     habilidad_coccion = Habilidad("Coccion")
 
-    franja_manana = Franja("Manana", capacidad=1)
-    franja_tarde = Franja("Tarde", capacidad=2)
-    franja_noche = Franja("Noche", capacidad=1)
+    franja_manana = Franja(TipoFranja.MANIANA, capacidad=1)
+    franja_tarde = Franja(TipoFranja.TARDE, capacidad=2)
+    franja_noche = Franja(TipoFranja.NOCHE, capacidad=1)
 
     area_cocina = AreaDeTrabajo(
         nombre="Cocina",
@@ -146,10 +146,10 @@ if __name__ == "__main__":
 
     print("\n--- Lo que pide el trabajador no se cruza con lo que genera el sistema solo ---")
     fecha_siguiente_2 = date(2026, 9, 16)
-    franja_madrugada = Franja("Madrugada", capacidad=2)
-    area_cocina.get_franjas().append(franja_madrugada)
+    franja_extra = Franja(TipoFranja.NOCHE, capacidad=2)
+    area_cocina.get_franjas().append(franja_extra)
     try:
-        sistema.solicitar_asignacion(ana, labor_cocinar, franja_madrugada, fecha_siguiente_2)
+        sistema.solicitar_asignacion(ana, labor_cocinar, franja_extra, fecha_siguiente_2)
     except TrabajadorNoAptoError as e:
         print(f"Solicitud de Ana rechazada al instante: {e}")
     sistema.ciclo_semanal(fecha_siguiente_2)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     )
     print(f"Solicitud de Ana persistio: {asignacion_de_ana is not None} (estado: {asignacion_de_ana.get_estado() if asignacion_de_ana else None})")
     coincidencias_del_hueco = list(filter(
-        lambda a: a.get_labor() == labor_cocinar and a.get_franja() == franja_madrugada and a.get_fecha() == fecha_siguiente_2,
+        lambda a: a.get_labor() == labor_cocinar and a.get_franja() == franja_extra and a.get_fecha() == fecha_siguiente_2,
         sistema.obtener_asignaciones(),
     ))
     print(f"Asignaciones para esa labor+franja+fecha: {len(coincidencias_del_hueco)} (no se duplico)")

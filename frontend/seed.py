@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from area_de_trabajo import AreaDeTrabajo
 from asignacion import Asignacion
 from credencial_profesional import CredencialProfesional
-from franja import Franja
+from franja import Franja, TipoFranja
 from habilidad import Habilidad, HabilidadDeTrabajador, HabilidadRequerida, NivelHabilidad
 from labor import Labor
 from sistema import Sistema
@@ -37,10 +37,10 @@ def armar_seed():
     h_docker = Habilidad("Docker")
     h_testing = Habilidad("Testing Automatizado")
 
-    franjas_frontend = [Franja("Manana", capacidad=3), Franja("Tarde", capacidad=3), Franja("Noche", capacidad=1)]
-    franjas_backend = [Franja("Manana", capacidad=3), Franja("Tarde", capacidad=3), Franja("Noche", capacidad=1)]
-    franjas_diseno = [Franja("Manana", capacidad=2), Franja("Tarde", capacidad=2)]
-    franjas_infra = [Franja("Manana", capacidad=2), Franja("Tarde", capacidad=1), Franja("Noche", capacidad=1)]
+    franjas_frontend = [Franja(TipoFranja.MANIANA, capacidad=3), Franja(TipoFranja.TARDE, capacidad=3), Franja(TipoFranja.NOCHE, capacidad=1)]
+    franjas_backend = [Franja(TipoFranja.MANIANA, capacidad=3), Franja(TipoFranja.TARDE, capacidad=3), Franja(TipoFranja.NOCHE, capacidad=1)]
+    franjas_diseno = [Franja(TipoFranja.MANIANA, capacidad=2), Franja(TipoFranja.TARDE, capacidad=2)]
+    franjas_infra = [Franja(TipoFranja.MANIANA, capacidad=2), Franja(TipoFranja.TARDE, capacidad=1), Franja(TipoFranja.NOCHE, capacidad=1)]
 
     area_frontend = AreaDeTrabajo("Frontend Squad", ["NDA Firmado"], franjas_frontend)
     area_backend = AreaDeTrabajo("Backend Squad", ["NDA Firmado"], franjas_backend)
