@@ -447,6 +447,20 @@ with tab_asignaciones:
             st.info("Hace falta al menos un trabajador y una labor para solicitar una asignacion.")
 
     st.divider()
+    st.subheader("Solicitudes en cola")
+    st.caption("Todavia no son asignaciones: son pedidos de trabajadores esperando a que el sistema los procese (FIFO).")
+
+    solicitudes_en_cola = sistema.get_solicitudes_pendientes().recorrer()
+    if not solicitudes_en_cola:
+        st.info("La cola esta vacia.")
+    else:
+        for orden, (trabajador_cola, labor_cola, franja_cola, fecha_cola) in enumerate(solicitudes_en_cola, start=1):
+            st.write(
+                f"{orden}. **{trabajador_cola.get_nombre()}** -> "
+                f"**{labor_cola.get_titulo()}** en franja '{franja_cola.get_nombre()}' el {fecha_cola}"
+            )
+
+    st.divider()
     st.subheader("Asignaciones")
 
     estados_disponibles = [EstadoAsignacion.AUTOMATICA, EstadoAsignacion.PENDIENTE, EstadoAsignacion.APROBADA]
