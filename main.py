@@ -124,6 +124,12 @@ if __name__ == "__main__":
     if sugerencias:
         primera_sugerencia = sugerencias[0]
         print(f"Trabajador original: {primera_sugerencia.get_trabajador().get_nombre()}")
+        try:
+            carla.reasignar_asignacion(primera_sugerencia, diego)
+        except TrabajadorNoAptoError as e:
+            print(f"Reasignacion a Diego rechazada (no tiene las habilidades/credenciales): {e}")
+        diego.set_habilidades([HabilidadDeTrabajador(habilidad_coccion, NivelHabilidad.INTERMEDIO)])
+        diego.set_credenciales([credencial_vigente])
         carla.reasignar_asignacion(primera_sugerencia, diego)
         print(f"Trabajador reasignado: {primera_sugerencia.get_trabajador().get_nombre()}")
 

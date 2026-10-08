@@ -56,7 +56,18 @@ class Sistema:
             raise TrabajadorNoAptoError(
                 f"{trabajador.get_nombre()} no es apto para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}'"
             )
+        if self._ya_esta_en_la_cola(trabajador, labor, franja, fecha):
+            raise AsignacionDuplicadaError(
+                f"{trabajador.get_nombre()} ya tiene una solicitud pendiente para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}' el {fecha}"
+            )
         self._solicitudes_pendientes.encolar((trabajador, labor, franja, fecha))
+
+    def _ya_esta_en_la_cola(self, trabajador, labor, franja, fecha):
+        for solicitud in self._solicitudes_pendientes.recorrer():
+            trabajador_en_cola, labor_en_cola, franja_en_cola, fecha_en_cola = solicitud
+            if trabajador_en_cola == trabajador and labor_en_cola == labor and franja_en_cola == franja and fecha_en_cola == fecha:
+                return True
+        return False
 
     def registrar_personal(self, id, nombre, horas_max, **atributos):
         nuevo_trabajador = Trabajador(
@@ -232,6 +243,17 @@ def test_generar_sugerencias_omite_candidato_con_asignacion_duplicada():
     sistema.obtener_asignaciones().append(existente)
     sugerencias = sistema.generar_sugerencias(date(2026, 1, 1))
     assert sugerencias == []
+
+
+def test_solicitar_asignacion_duplicada_en_la_cola_lanza_error():
+    import pytest
+
+    sistema, trabajador, labor, franja = _armar_sistema()
+    fecha = date(2026, 1, 1)
+    sistema.solicitar_asignacion(trabajador, labor, franja, fecha)
+    with pytest.raises(AsignacionDuplicadaError):
+        sistema.solicitar_asignacion(trabajador, labor, franja, fecha)
+    assert len(sistema.get_solicitudes_pendientes()) == 1
 
 
 def test_ciclo_semanal_prioriza_solicitud_del_trabajador_sobre_sugerencia_automatica():

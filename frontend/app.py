@@ -33,6 +33,25 @@ NOMBRES_NIVEL = {
 }
 
 
+def candidatos_para_reasignar(asignacion, trabajadores):
+    labor = asignacion.get_labor()
+    fecha = asignacion.get_fecha()
+    candidatos = []
+    for trabajador in trabajadores:
+        if trabajador == asignacion.get_trabajador():
+            continue
+        if not trabajador.tiene_habilidades(labor.get_habilidades_requeridas()):
+            continue
+        if not trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha):
+            continue
+        if not trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha):
+            continue
+        if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
+            continue
+        candidatos.append(trabajador)
+    return candidatos
+
+
 from seed import armar_seed
 
 
@@ -136,7 +155,7 @@ with tab_flujo:
             if b2.button("Rechazar", key=f"flujo_rechazar_{i}"):
                 supervisor.rechazar_asignacion(a, sistema)
                 st.rerun()
-            otros = [t for t in sistema.get_trabajadores() if t != a.get_trabajador()]
+            otros = candidatos_para_reasignar(a, sistema.get_trabajadores())
             if otros:
                 id_otro = b3.selectbox(
                     "Reasignar a", [t.get_id() for t in otros],
@@ -147,6 +166,8 @@ with tab_flujo:
                     nuevo_t = next(t for t in otros if t.get_id() == id_otro)
                     supervisor.reasignar_asignacion(a, nuevo_t)
                     st.rerun()
+            else:
+                b3.caption("Nadie mas es apto para esta labor.")
 
     st.divider()
     st.markdown("### Paso 5 — ¿Quedaron todas las labores cubiertas?")
@@ -489,7 +510,7 @@ with tab_asignaciones:
                     except Exception as e:
                         st.error(str(e))
 
-                otros = [t for t in sistema.get_trabajadores() if t != asignacion.get_trabajador()]
+                otros = candidatos_para_reasignar(asignacion, sistema.get_trabajadores())
                 nuevo_trabajador = None
                 if otros:
                     id_nuevo_trabajador = c2.selectbox(

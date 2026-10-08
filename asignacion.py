@@ -66,6 +66,26 @@ class Asignacion:
     def reasignar(self, nuevo_trabajador):
         if self._estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede reasignar una asignacion ya Aprobada")
+
+        if not nuevo_trabajador.tiene_habilidades(self._labor.get_habilidades_requeridas()):
+            raise TrabajadorNoAptoError(
+                f"{nuevo_trabajador.get_nombre()} no tiene todas las habilidades requeridas por la labor '{self._labor.get_titulo()}'"
+            )
+        if not nuevo_trabajador.tiene_credenciales_activas(self._labor.get_credenciales_requeridas(), self._fecha):
+            raise TrabajadorNoAptoError(
+                f"{nuevo_trabajador.get_nombre()} no tiene las credenciales de la labor activas en la fecha {self._fecha}"
+            )
+        if not nuevo_trabajador.tiene_credenciales_activas(self._labor.get_area().get_credenciales_obligatorias(), self._fecha):
+            raise TrabajadorNoAptoError(
+                f"{nuevo_trabajador.get_nombre()} no tiene las credenciales obligatorias del area '{self._labor.get_area().get_nombre()}' activas"
+            )
+        if not nuevo_trabajador.puede_tomar_horas(self._labor.get_duracion_horas()):
+            raise HorasMaximasExcedidasError(
+                f"{nuevo_trabajador.get_nombre()} superaria sus horas maximas semanales ({nuevo_trabajador.get_horas_maximas_semana()}hs)"
+            )
+
+        self._trabajador.restar_horas(self._labor.get_duracion_horas())
+        nuevo_trabajador.sumar_horas(self._labor.get_duracion_horas())
         self._trabajador = nuevo_trabajador
 
     def rechazar(self):
@@ -188,10 +208,23 @@ def test_crear_lanza_asignacion_duplicada_error():
 
 def test_reasignar_pendiente_cambia_trabajador():
     trabajador, labor, franja = _armar_escenario()
-    otro_trabajador = Trabajador(2, "Beto", [], [], 20)
+    otro_trabajador = Trabajador(2, "Beto", [HabilidadDeTrabajador(Habilidad("Coccion"), NivelHabilidad.BASICO)], [], 20)
     asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.reasignar(otro_trabajador)
     assert asignacion.get_trabajador() == otro_trabajador
+    assert trabajador.get_horas_asignadas() == 0
+    assert otro_trabajador.get_horas_asignadas() == 4
+
+
+def test_reasignar_a_trabajador_no_apto_lanza_error():
+    import pytest
+
+    trabajador, labor, franja = _armar_escenario()
+    otro_trabajador = Trabajador(2, "Beto", [], [], 20)
+    asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    with pytest.raises(TrabajadorNoAptoError):
+        asignacion.reasignar(otro_trabajador)
+    assert asignacion.get_trabajador() == trabajador
 
 
 def test_rechazar_libera_horas_y_franja():

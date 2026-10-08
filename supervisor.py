@@ -56,10 +56,21 @@ def test_aprobar_asignaciones_pendientes_cambia_estado():
 
 def test_reasignar_asignacion_delega_en_asignacion():
     supervisor, sistema, trabajador, labor, franja = _armar_escenario()
-    otro_trabajador = Trabajador(3, "Beto", [], [], 20)
+    otro_trabajador = Trabajador(3, "Beto", [HabilidadDeTrabajador(Habilidad("Coccion"), NivelHabilidad.BASICO)], [], 20)
     asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
     supervisor.reasignar_asignacion(asignacion, otro_trabajador)
     assert asignacion.get_trabajador() == otro_trabajador
+
+
+def test_reasignar_asignacion_a_no_apto_lanza_error():
+    import pytest
+    from asignacion import TrabajadorNoAptoError
+
+    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    otro_trabajador = Trabajador(3, "Beto", [], [], 20)
+    asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    with pytest.raises(TrabajadorNoAptoError):
+        supervisor.reasignar_asignacion(asignacion, otro_trabajador)
 
 
 def test_rechazar_asignacion_la_saca_del_sistema():
