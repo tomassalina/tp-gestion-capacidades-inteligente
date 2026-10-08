@@ -95,9 +95,9 @@ if __name__ == "__main__":
     )
 
     print("\n--- Ana y Beto solicitan la labor durante la semana ---")
-    sistema.solicitar_asignacion(ana, labor_cocinar, franja_manana, fecha_hoy)
+    ana.solicitar_asignacion(sistema, labor_cocinar, franja_manana, fecha_hoy)
     try:
-        sistema.solicitar_asignacion(beto, labor_cocinar, franja_manana, fecha_hoy)
+        beto.solicitar_asignacion(sistema, labor_cocinar, franja_manana, fecha_hoy)
     except TrabajadorNoAptoError as e:
         print(f"Solicitud de Beto rechazada al instante: {e}")
 
@@ -133,6 +133,16 @@ if __name__ == "__main__":
         carla.reasignar_asignacion(primera_sugerencia, diego)
         print(f"Trabajador reasignado: {primera_sugerencia.get_trabajador().get_nombre()}")
 
+    print("\n--- Carla asigna directamente a Diego (sin pasar por solicitud/sugerencia) ---")
+    fecha_asignacion_directa = date(2026, 9, 10)
+    franja_directa = Franja(TipoFranja.TARDE, capacidad=1)
+    area_cocina.get_franjas().append(franja_directa)
+    asignacion_directa = carla.asignar_trabajador(sistema, diego, labor_cocinar, franja_directa, fecha_asignacion_directa)
+    print(
+        f"{asignacion_directa.get_trabajador().get_nombre()} -> {asignacion_directa.get_labor().get_titulo()} "
+        f"(estado: {asignacion_directa.get_estado()})"
+    )
+
     print("\n--- Carla agrega una nueva credencial obligatoria al area ---")
     carla.agregar_regla_area(area_cocina, "Certificado de Higiene")
     print(f"Credenciales obligatorias de '{area_cocina.get_nombre()}': {area_cocina.get_credenciales_obligatorias()}")
@@ -155,7 +165,7 @@ if __name__ == "__main__":
     franja_extra = Franja(TipoFranja.NOCHE, capacidad=2)
     area_cocina.get_franjas().append(franja_extra)
     try:
-        sistema.solicitar_asignacion(ana, labor_cocinar, franja_extra, fecha_siguiente_2)
+        ana.solicitar_asignacion(sistema, labor_cocinar, franja_extra, fecha_siguiente_2)
     except TrabajadorNoAptoError as e:
         print(f"Solicitud de Ana rechazada al instante: {e}")
     sistema.ciclo_semanal(fecha_siguiente_2)

@@ -115,7 +115,7 @@ with tab_flujo:
             resultados = []
             for t in candidatos:
                 try:
-                    sistema.solicitar_asignacion(t, labor_demo, franja_demo, fecha_demo)
+                    t.solicitar_asignacion(sistema, labor_demo, franja_demo, fecha_demo)
                     resultados.append(("ok", f"{t.get_nombre()}: solicitud aceptada, va a la cola."))
                 except Exception as e:
                     resultados.append(("error", f"{t.get_nombre()}: rechazado al instante — {e}"))
@@ -457,9 +457,20 @@ with tab_asignaciones:
             else:
                 f_sel = None
             fecha_sol = st.date_input("Fecha de la solicitud", value=date.today(), key="sol_fecha")
-            if st.button("Solicitar asignacion", disabled=f_sel is None):
-                sistema.solicitar_asignacion(t_sel, l_sel, f_sel, fecha_sol)
-                st.success("Solicitud agregada a la cola de pendientes.")
+            col_sol, col_asig = st.columns(2)
+            if col_sol.button("Solicitar asignacion", disabled=f_sel is None):
+                try:
+                    t_sel.solicitar_asignacion(sistema, l_sel, f_sel, fecha_sol)
+                    st.success("Solicitud agregada a la cola de pendientes.")
+                except Exception as e:
+                    st.error(str(e))
+            if col_asig.button("Carla asigna directamente (sin pasar por la cola)", disabled=f_sel is None):
+                try:
+                    supervisor.asignar_trabajador(sistema, t_sel, l_sel, f_sel, fecha_sol)
+                    st.success("Asignacion creada directamente, ya Aprobada.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(str(e))
             if st.button("Procesar solicitudes pendientes (supervisor)"):
                 supervisor.ejecutar_acciones_del_sistema(sistema)
                 st.success("Solicitudes procesadas y horas semanales reiniciadas.")

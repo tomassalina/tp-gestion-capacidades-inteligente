@@ -126,7 +126,7 @@ def armar_seed():
 
     for candidato in trabajadores:
         if candidato in sistema.buscar_trabajadores_disponibles(labores[0], franjas_frontend[0], HOY):
-            sistema.solicitar_asignacion(candidato, labores[0], franjas_frontend[0], HOY)
+            candidato.solicitar_asignacion(sistema, labores[0], franjas_frontend[0], HOY)
             break
 
     return sistema, supervisores[0]
