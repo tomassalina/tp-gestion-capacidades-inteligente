@@ -1,4 +1,5 @@
 from datetime import date
+from asignacion import TrabajadorNoAptoError
 
 from credencial_profesional import CredencialProfesional
 from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
@@ -35,12 +36,17 @@ if __name__ == "__main__":
         fecha_obtencion=date(2020, 1, 1),
         fecha_caducidad=date(2021, 1, 1),
     )
+    credencial_higiene = CredencialProfesional(
+        nombre="Certificado de Higiene",
+        fecha_obtencion=date(2025, 1, 1),
+        fecha_caducidad=date(2027, 1, 1),
+    )
 
     ana = Trabajador(
         id=1,
         nombre="Ana",
         habilidades=[HabilidadDeTrabajador(habilidad_coccion, NivelHabilidad.AVANZADO)],
-        credenciales=[credencial_vigente],
+        credenciales=[credencial_vigente, credencial_higiene],
         horas_maximas_semana=20,
     )
 
@@ -90,7 +96,10 @@ if __name__ == "__main__":
 
     print("\n--- Ana y Beto solicitan la labor durante la semana ---")
     sistema.solicitar_asignacion(ana, labor_cocinar, franja_manana, fecha_hoy)
-    sistema.solicitar_asignacion(beto, labor_cocinar, franja_manana, fecha_hoy)
+    try:
+        sistema.solicitar_asignacion(beto, labor_cocinar, franja_manana, fecha_hoy)
+    except TrabajadorNoAptoError as e:
+        print(f"Solicitud de Beto rechazada al instante: {e}")
 
     print("\n--- Carla (supervisora) corre manualmente las acciones semanales del sistema ---")
     carla.ejecutar_acciones_del_sistema(sistema)
@@ -134,3 +143,23 @@ if __name__ == "__main__":
     print("\n--- Resultado final ---")
     for asignacion in sistema.obtener_asignaciones():
         print(f"{asignacion.get_trabajador().get_nombre()} -> {asignacion.get_labor().get_titulo()} ({asignacion.get_estado()})")
+
+    print("\n--- Lo que pide el trabajador no se cruza con lo que genera el sistema solo ---")
+    fecha_siguiente_2 = date(2026, 9, 16)
+    franja_madrugada = Franja("Madrugada", capacidad=2)
+    area_cocina.get_franjas().append(franja_madrugada)
+    try:
+        sistema.solicitar_asignacion(ana, labor_cocinar, franja_madrugada, fecha_siguiente_2)
+    except TrabajadorNoAptoError as e:
+        print(f"Solicitud de Ana rechazada al instante: {e}")
+    sistema.ciclo_semanal(fecha_siguiente_2)
+    asignacion_de_ana = next(
+        filter(lambda a: a.get_trabajador() == ana and a.get_fecha() == fecha_siguiente_2, sistema.obtener_asignaciones()),
+        None,
+    )
+    print(f"Solicitud de Ana persistio: {asignacion_de_ana is not None} (estado: {asignacion_de_ana.get_estado() if asignacion_de_ana else None})")
+    coincidencias_del_hueco = list(filter(
+        lambda a: a.get_labor() == labor_cocinar and a.get_franja() == franja_madrugada and a.get_fecha() == fecha_siguiente_2,
+        sistema.obtener_asignaciones(),
+    ))
+    print(f"Asignaciones para esa labor+franja+fecha: {len(coincidencias_del_hueco)} (no se duplico)")

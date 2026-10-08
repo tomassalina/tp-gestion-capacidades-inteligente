@@ -1,6 +1,12 @@
+from datetime import date
+from franja import Franja
+from labor import Labor
+from trabajador import Trabajador
+
+
 class EstadoAsignacion:
 
-    SUGERIDA = "Sugerida"
+    AUTOMATICA = "Automatica"
     PENDIENTE = "Pendiente"
     APROBADA = "Aprobada"
 
@@ -24,6 +30,15 @@ class AsignacionDuplicadaError(Exception):
 class Asignacion:
 
     def __init__(self, trabajador, labor, franja, fecha):
+        if not isinstance(trabajador, Trabajador):
+            raise TypeError("trabajador debe ser una instancia de Trabajador")
+        if not isinstance(labor, Labor):
+            raise TypeError("labor debe ser una instancia de Labor")
+        if not isinstance(franja, Franja):
+            raise TypeError("franja debe ser una instancia de Franja")
+        if not isinstance(fecha, date):
+            raise TypeError("fecha debe ser un date")
+
         self._trabajador = trabajador
         self._labor = labor
         self._franja = franja
@@ -52,6 +67,12 @@ class Asignacion:
         if self._estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede reasignar una asignacion ya Aprobada")
         self._trabajador = nuevo_trabajador
+
+    def rechazar(self):
+        if self._estado == EstadoAsignacion.APROBADA:
+            raise ValueError("No se puede rechazar una asignacion ya Aprobada")
+        self._trabajador.restar_horas(self._labor.get_duracion_horas())
+        self._franja.liberar_lugar()
 
     @staticmethod
     def validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes):
@@ -91,6 +112,9 @@ class Asignacion:
 
     @staticmethod
     def crear(trabajador, labor, franja, fecha, asignaciones_existentes, estado=None):
+        if estado is not None and estado not in (EstadoAsignacion.AUTOMATICA, EstadoAsignacion.PENDIENTE, EstadoAsignacion.APROBADA):
+            raise ValueError("estado debe ser uno de los valores definidos en EstadoAsignacion")
+
         Asignacion.validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes)
 
         trabajador.sumar_horas(labor.get_duracion_horas())
@@ -123,6 +147,16 @@ def _armar_escenario():
     labor = Labor(1, "Cocinar", "Cocinar el menu", 4, [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)], [], area)
     trabajador = Trabajador(1, "Ana", [HabilidadDeTrabajador(habilidad, NivelHabilidad.BASICO)], [], 20)
     return trabajador, labor, franja
+
+
+def test_asignacion_tipo_o_estado_invalido_lanza_error():
+    import pytest
+
+    trabajador, labor, franja = _armar_escenario()
+    with pytest.raises(TypeError):
+        Asignacion("no es trabajador", labor, franja, date(2026, 1, 1))
+    with pytest.raises(ValueError):
+        Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [], estado="Invalido")
 
 
 def test_crear_asignacion_exitosa_queda_pendiente():
@@ -158,6 +192,24 @@ def test_reasignar_pendiente_cambia_trabajador():
     asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.reasignar(otro_trabajador)
     assert asignacion.get_trabajador() == otro_trabajador
+
+
+def test_rechazar_libera_horas_y_franja():
+    trabajador, labor, franja = _armar_escenario()
+    asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    asignacion.rechazar()
+    assert trabajador.get_horas_asignadas() == 0
+    assert franja.tiene_lugar()
+
+
+def test_rechazar_aprobada_lanza_value_error():
+    import pytest
+
+    trabajador, labor, franja = _armar_escenario()
+    asignacion = Asignacion.crear(trabajador, labor, franja, date(2026, 1, 1), [])
+    asignacion.aprobar()
+    with pytest.raises(ValueError):
+        asignacion.rechazar()
 
 
 def test_reasignar_aprobada_lanza_value_error():

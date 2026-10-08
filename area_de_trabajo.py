@@ -1,6 +1,18 @@
+from franja import Franja
+
+
 class AreaDeTrabajo:
 
     def __init__(self, nombre, credenciales_obligatorias, franjas):
+        if not isinstance(nombre, str):
+            raise TypeError("nombre debe ser un string")
+        if nombre.strip() == "":
+            raise ValueError("nombre no puede estar vacio")
+        if not isinstance(credenciales_obligatorias, list):
+            raise TypeError("credenciales_obligatorias debe ser una lista")
+        if not isinstance(franjas, list) or not all(map(lambda f: isinstance(f, Franja), franjas)):
+            raise TypeError("franjas debe ser una lista de Franja")
+
         self._nombre = nombre
         self._credenciales_obligatorias = credenciales_obligatorias
         self._franjas = franjas
@@ -30,7 +42,22 @@ class AreaDeTrabajo:
         return next(filter(lambda f: f.get_nombre() == nombre_franja, self._franjas), None)
 
 
-from franja import Franja
+def test_area_de_trabajo_tipos_invalidos_lanza_type_error():
+    import pytest
+
+    with pytest.raises(TypeError):
+        AreaDeTrabajo(123, [], [])
+    with pytest.raises(TypeError):
+        AreaDeTrabajo("Cocina", "no es lista", [])
+    with pytest.raises(TypeError):
+        AreaDeTrabajo("Cocina", [], "no es lista")
+
+
+def test_area_de_trabajo_lista_con_elemento_de_tipo_incorrecto_lanza_type_error():
+    import pytest
+
+    with pytest.raises(TypeError):
+        AreaDeTrabajo("Cocina", [], ["no es franja"])
 
 
 def test_buscar_franja_encuentra_por_nombre():

@@ -1,8 +1,30 @@
+from area_de_trabajo import AreaDeTrabajo
+from habilidad import HabilidadRequerida
+
+
 class Labor:
 
     def __init__(self, id, titulo, descripcion, duracion_horas, habilidades_requeridas, credenciales_requeridas, area):
+        if not isinstance(id, int):
+            raise TypeError("id debe ser un int")
+        if not isinstance(titulo, str):
+            raise TypeError("titulo debe ser un string")
+        if titulo.strip() == "":
+            raise ValueError("titulo no puede estar vacio")
+        if not isinstance(descripcion, str):
+            raise TypeError("descripcion debe ser un string")
+        if descripcion.strip() == "":
+            raise ValueError("descripcion no puede estar vacia")
+        if not isinstance(duracion_horas, (int, float)):
+            raise TypeError("duracion_horas debe ser un numero")
         if duracion_horas <= 0:
             raise ValueError("La duracion en horas debe ser mayor a 0")
+        if not isinstance(habilidades_requeridas, list) or not all(map(lambda h: isinstance(h, HabilidadRequerida), habilidades_requeridas)):
+            raise TypeError("habilidades_requeridas debe ser una lista de HabilidadRequerida")
+        if not isinstance(credenciales_requeridas, list):
+            raise TypeError("credenciales_requeridas debe ser una lista")
+        if not isinstance(area, AreaDeTrabajo):
+            raise TypeError("area debe ser una instancia de AreaDeTrabajo")
 
         self._id = id
         self._titulo = titulo
@@ -60,7 +82,26 @@ def test_labor_duracion_invalida_lanza_value_error():
 
 
 def test_labor_se_crea_correctamente():
-    labor = Labor(1, "Preparar almuerzo", "Cocinar el menu", 4, [], ["Carnet"], "Cocina")
+    area = AreaDeTrabajo("Cocina", [], [])
+    labor = Labor(1, "Preparar almuerzo", "Cocinar el menu", 4, [], ["Carnet"], area)
     assert labor.get_titulo() == "Preparar almuerzo"
     assert labor.get_duracion_horas() == 4
-    assert labor.get_area() == "Cocina"
+    assert labor.get_area() == area
+
+
+def test_labor_lista_con_elemento_de_tipo_incorrecto_lanza_type_error():
+    import pytest
+
+    area = AreaDeTrabajo("Cocina", [], [])
+    with pytest.raises(TypeError):
+        Labor(1, "Titulo", "Descripcion", 4, ["no es habilidad requerida"], [], area)
+
+
+def test_labor_tipos_invalidos_lanza_type_error():
+    import pytest
+
+    area = AreaDeTrabajo("Cocina", [], [])
+    with pytest.raises(TypeError):
+        Labor("1", "Titulo", "Descripcion", 4, [], [], area)
+    with pytest.raises(TypeError):
+        Labor(1, "Titulo", "Descripcion", 4, [], [], "Cocina")
