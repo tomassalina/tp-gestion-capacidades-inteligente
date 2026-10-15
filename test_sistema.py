@@ -1,11 +1,10 @@
 from datetime import date
-from unittest.mock import MagicMock
 
 import pytest
 
 from area_de_trabajo import AreaDeTrabajo
 from asignacion import Asignacion, AsignacionDuplicadaError, EstadoAsignacion
-from franja import Franja, TipoFranja
+from franja import Franja
 from habilidad import Habilidad, HabilidadDeTrabajador, HabilidadRequerida, NivelHabilidad
 from labor import Labor
 from sistema import Sistema
@@ -133,82 +132,3 @@ def test_ciclo_semanal_prioriza_solicitud_del_trabajador_sobre_sugerencia_automa
     assert len(asignaciones_del_trabajador) == 1
     coincide_hueco = lambda a: a.get_labor() == labor and a.get_franja() == franja and a.get_fecha() == fecha
     assert len(list(filter(coincide_hueco, sistema.obtener_asignaciones()))) == 1
-
-
-# ---------------------------------------------------------------------------
-# Test grande: buscar_trabajadores_disponibles aisla y combina sus 5 reglas.
-#
-# Mockeamos al Trabajador (con spec=Trabajador, para pasar el isinstance() que
-# hace Sistema al construirse) para controlar de forma independiente cada una
-# de las 5 condiciones que Sistema evalua, sin depender de la logica real de
-# Trabajador/Habilidad/CredencialProfesional. Labor y AreaDeTrabajo quedan
-# reales, para poder distinguir "credenciales de la labor" de "credenciales
-# del area" por identidad de la lista (son getters que devuelven siempre el
-# mismo objeto interno).
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def labor_con_requisitos():
-    habilidad = Habilidad("Python")
-    franja = Franja(TipoFranja.MANIANA, capacidad=1)
-    area = AreaDeTrabajo("Backend", ["NDA Firmado"], [franja])
-    labor = Labor(
-        1, "Armar API", "Escribir un endpoint nuevo", 4,
-        [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)],
-        ["Certificado Python"],
-        area,
-    )
-    return labor, franja
-
-
-def _mockear_trabajador(labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas):
-    trabajador_mock = MagicMock(spec=Trabajador)
-    trabajador_mock.tiene_habilidades.return_value = apto_habilidades
-    trabajador_mock.puede_tomar_horas.return_value = puede_tomar_horas
-
-    credenciales_de_la_labor = labor.get_credenciales_requeridas()
-    credenciales_del_area = labor.get_area().get_credenciales_obligatorias()
-
-    def responder_credenciales(credenciales_pedidas, fecha):
-        if credenciales_pedidas is credenciales_de_la_labor:
-            return apto_credenciales_labor
-        if credenciales_pedidas is credenciales_del_area:
-            return apto_credenciales_area
-        raise AssertionError("Sistema pidio credenciales que no reconozco")
-
-    trabajador_mock.tiene_credenciales_activas.side_effect = responder_credenciales
-    return trabajador_mock
-
-
-@pytest.mark.parametrize(
-    "apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas, franja_ocupada, debe_aparecer",
-    [
-        pytest.param(True, True, True, True, False, True, id="cumple_las_5_reglas"),
-        pytest.param(False, True, True, True, False, False, id="sin_habilidad_requerida"),
-        pytest.param(True, False, True, True, False, False, id="sin_credencial_de_la_labor"),
-        pytest.param(True, True, False, True, False, False, id="sin_credencial_obligatoria_del_area"),
-        pytest.param(True, True, True, False, False, False, id="supera_horas_maximas_semanales"),
-        pytest.param(True, True, True, True, True, False, id="franja_sin_lugar_disponible"),
-    ],
-)
-def test_buscar_trabajadores_disponibles_evalua_las_5_reglas_de_forma_independiente(
-    labor_con_requisitos,
-    apto_habilidades,
-    apto_credenciales_labor,
-    apto_credenciales_area,
-    puede_tomar_horas,
-    franja_ocupada,
-    debe_aparecer,
-):
-    labor, franja = labor_con_requisitos
-    if franja_ocupada:
-        franja.ocupar_lugar()  # capacidad=1, la deja justo sin lugar
-
-    trabajador_mock = _mockear_trabajador(
-        labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas
-    )
-    sistema = Sistema(trabajadores=[trabajador_mock], areas=[labor.get_area()], labores=[labor])
-
-    disponibles = sistema.buscar_trabajadores_disponibles(labor, franja, date(2026, 1, 1))
-
-    assert (trabajador_mock in disponibles) == debe_aparecer

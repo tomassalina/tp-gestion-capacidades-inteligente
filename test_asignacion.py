@@ -1,4 +1,6 @@
+from contextlib import nullcontext
 from datetime import date
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -11,7 +13,7 @@ from asignacion import (
     HorasMaximasExcedidasError,
     TrabajadorNoAptoError,
 )
-from franja import Franja
+from franja import Franja, TipoFranja
 from habilidad import Habilidad, HabilidadDeTrabajador, HabilidadRequerida, NivelHabilidad
 from labor import Labor
 from trabajador import Trabajador
@@ -101,12 +103,101 @@ def test_reasignar_aprobada_lanza_value_error():
         asignacion.reasignar(otro_trabajador)
 
 
-def test_validar_apto_con_mock_de_trabajador_no_habilitado():
-    from unittest.mock import MagicMock
+# ---------------------------------------------------------------------------
+# Test grande: validar_apto es LA decision de negocio de todo el TP.
+#
+# No es un CRUD generico: es la regla propia de "Gestion de Capacidades
+# Inteligente" que decide, en un unico lugar, si un trabajador puede ocupar
+# una labor+franja+fecha, combinando 6 condiciones independientes (R4, R5,
+# R6, R7 de la consigna) y traduciendo cada violacion a su excepcion propia.
+#
+# Mockeamos al Trabajador (con spec=Trabajador, para pasar el isinstance()
+# que exige Asignacion al validar) para poder prender y apagar cada condicion
+# por separado sin depender de la logica real de Habilidad/CredencialProfesional.
+# Como tiene_credenciales_activas se llama dos veces con argumentos distintos
+# (credenciales de la labor vs. del area), el side_effect distingue por
+# identidad de la lista cual de las dos credenciales le estan pidiendo.
+# ---------------------------------------------------------------------------
 
-    _, labor, franja = _armar_escenario()
-    trabajador_mock = MagicMock()
+@pytest.fixture
+def labor_con_requisitos():
+    habilidad = Habilidad("Python")
+    franja = Franja(TipoFranja.MANIANA, capacidad=1)
+    area = AreaDeTrabajo("Backend", ["NDA Firmado"], [franja])
+    labor = Labor(
+        1, "Armar API", "Escribir un endpoint nuevo", 4,
+        [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)],
+        ["Certificado Python"],
+        area,
+    )
+    return labor, franja
+
+
+def _mockear_trabajador(labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas):
+    trabajador_mock = MagicMock(spec=Trabajador)
     trabajador_mock.get_nombre.return_value = "Mockeado"
-    trabajador_mock.tiene_habilidades.return_value = False
-    with pytest.raises(TrabajadorNoAptoError):
-        Asignacion.validar_apto(trabajador_mock, labor, franja, date(2026, 1, 1), [])
+    trabajador_mock.tiene_habilidades.return_value = apto_habilidades
+    trabajador_mock.puede_tomar_horas.return_value = puede_tomar_horas
+
+    credenciales_de_la_labor = labor.get_credenciales_requeridas()
+    credenciales_del_area = labor.get_area().get_credenciales_obligatorias()
+
+    def responder_credenciales(credenciales_pedidas, fecha):
+        if credenciales_pedidas is credenciales_de_la_labor:
+            return apto_credenciales_labor
+        if credenciales_pedidas is credenciales_del_area:
+            return apto_credenciales_area
+        raise AssertionError("validar_apto pidio credenciales que no reconozco")
+
+    trabajador_mock.tiene_credenciales_activas.side_effect = responder_credenciales
+    return trabajador_mock
+
+
+def _mockear_asignacion_existente(labor, franja, fecha):
+    asignacion_mock = MagicMock(spec=Asignacion)
+    asignacion_mock.get_labor.return_value = labor
+    asignacion_mock.get_franja.return_value = franja
+    asignacion_mock.get_fecha.return_value = fecha
+    return asignacion_mock
+
+
+@pytest.mark.parametrize(
+    "apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas, "
+    "franja_ocupada, hay_asignacion_previa, excepcion_esperada",
+    [
+        pytest.param(True, True, True, True, False, False, None, id="cumple_las_6_reglas"),
+        pytest.param(False, True, True, True, False, False, TrabajadorNoAptoError, id="sin_habilidad_requerida"),
+        pytest.param(True, False, True, True, False, False, TrabajadorNoAptoError, id="sin_credencial_de_la_labor"),
+        pytest.param(True, True, False, True, False, False, TrabajadorNoAptoError, id="sin_credencial_obligatoria_del_area"),
+        pytest.param(True, True, True, False, False, False, HorasMaximasExcedidasError, id="supera_horas_maximas_semanales"),
+        pytest.param(True, True, True, True, True, False, FranjaSinLugarError, id="franja_sin_lugar_disponible"),
+        pytest.param(True, True, True, True, False, True, AsignacionDuplicadaError, id="ya_hay_asignacion_en_ese_hueco"),
+    ],
+)
+def test_validar_apto_aplica_las_6_reglas_de_negocio_de_forma_independiente(
+    labor_con_requisitos,
+    apto_habilidades,
+    apto_credenciales_labor,
+    apto_credenciales_area,
+    puede_tomar_horas,
+    franja_ocupada,
+    hay_asignacion_previa,
+    excepcion_esperada,
+):
+    labor, franja = labor_con_requisitos
+    fecha = date(2026, 1, 1)
+
+    if franja_ocupada:
+        franja.ocupar_lugar()  # capacidad=1, la deja justo sin lugar
+
+    trabajador_mock = _mockear_trabajador(
+        labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas
+    )
+
+    asignaciones_existentes = []
+    if hay_asignacion_previa:
+        asignaciones_existentes = [_mockear_asignacion_existente(labor, franja, fecha)]
+
+    contexto = pytest.raises(excepcion_esperada) if excepcion_esperada else nullcontext()
+    with contexto:
+        Asignacion.validar_apto(trabajador_mock, labor, franja, fecha, asignaciones_existentes)
