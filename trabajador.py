@@ -23,7 +23,10 @@ class Trabajador:
 
         self._id = id
         self._nombre = nombre
-        self._habilidades = habilidades
+        self._habilidades = []
+        self._nombres_habilidades = set()
+        for habilidad_de_trabajador in habilidades:
+            self.agregar_habilidad(habilidad_de_trabajador)
         self._credenciales = credenciales
         self._horas_maximas_semana = horas_maximas_semana
         self._horas_asignadas = 0
@@ -42,7 +45,17 @@ class Trabajador:
         return self._habilidades
 
     def set_habilidades(self, habilidades):
-        self._habilidades = habilidades
+        self._habilidades = []
+        self._nombres_habilidades = set()
+        for habilidad_de_trabajador in habilidades:
+            self.agregar_habilidad(habilidad_de_trabajador)
+
+    def agregar_habilidad(self, habilidad_de_trabajador):
+        nombre = habilidad_de_trabajador.get_habilidad().get_nombre()
+        if nombre in self._nombres_habilidades:
+            return
+        self._nombres_habilidades.add(nombre)
+        self._habilidades.append(habilidad_de_trabajador)
 
     def get_credenciales(self):
         return self._credenciales

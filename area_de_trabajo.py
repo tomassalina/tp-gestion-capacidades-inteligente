@@ -16,6 +16,7 @@ class AreaDeTrabajo:
         self._nombre = nombre
         self._credenciales_obligatorias = credenciales_obligatorias
         self._franjas = franjas
+        self._franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
 
     def get_nombre(self):
         return self._nombre
@@ -37,6 +38,7 @@ class AreaDeTrabajo:
 
     def set_franjas(self, franjas):
         self._franjas = franjas
+        self._franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
 
     def buscar_franja(self, nombre_franja):
-        return next(filter(lambda f: f.get_nombre() == nombre_franja, self._franjas), None)
+        return self._franjas_por_nombre.get(nombre_franja)

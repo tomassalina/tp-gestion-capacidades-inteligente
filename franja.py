@@ -5,12 +5,15 @@ class TipoFranja:
     NOCHE = "Noche"
 
 
+NOMBRES_FRANJA_VALIDOS = (TipoFranja.MANIANA, TipoFranja.TARDE, TipoFranja.NOCHE)
+
+
 class Franja:
 
     def __init__(self, nombre, capacidad):
         if not isinstance(nombre, str):
             raise TypeError("nombre debe ser un string")
-        if nombre not in (TipoFranja.MANIANA, TipoFranja.TARDE, TipoFranja.NOCHE):
+        if nombre not in NOMBRES_FRANJA_VALIDOS:
             raise ValueError("nombre debe ser Manana, Tarde o Noche")
         if not isinstance(capacidad, int):
             raise TypeError("capacidad debe ser un int")
