@@ -48,3 +48,12 @@ class Franja:
     def liberar_lugar(self):
         if self._trabajadores_asignados > 0:
             self._trabajadores_asignados -= 1
+
+    def a_texto(self):
+        # no se persiste la ocupacion: se reconstruye sola cuando se recargan las asignaciones
+        return f"{self._nombre}:{self._capacidad}"
+
+    @staticmethod
+    def desde_texto(texto):
+        nombre, capacidad = texto.split(":")
+        return Franja(nombre, int(capacidad))

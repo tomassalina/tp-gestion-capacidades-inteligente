@@ -27,6 +27,13 @@ class Habilidad:
     def __eq__(self, other):
         return isinstance(other, Habilidad) and self._nombre == other.get_nombre()
 
+    def guardar(self, repo):
+        repo.create(id=self._nombre, nombre=self._nombre)
+
+    @staticmethod
+    def cargar_todas(repo):
+        return list(map(lambda fila: Habilidad(fila["nombre"]), repo.find_all()))
+
 
 class HabilidadDeTrabajador:
 
@@ -54,6 +61,14 @@ class HabilidadDeTrabajador:
     def cumple_nivel_minimo(self, nivel_minimo):
         return self._nivel >= nivel_minimo
 
+    def a_texto(self):
+        return f"{self._habilidad.get_nombre()}:{self._nivel}"
+
+    @staticmethod
+    def desde_texto(texto, habilidades_por_nombre):
+        nombre, nivel = texto.split(":")
+        return HabilidadDeTrabajador(habilidades_por_nombre[nombre], int(nivel))
+
 
 class HabilidadRequerida:
 
@@ -77,3 +92,11 @@ class HabilidadRequerida:
 
     def set_nivel_minimo(self, nivel_minimo):
         self._nivel_minimo = nivel_minimo
+
+    def a_texto(self):
+        return f"{self._habilidad.get_nombre()}:{self._nivel_minimo}"
+
+    @staticmethod
+    def desde_texto(texto, habilidades_por_nombre):
+        nombre, nivel_minimo = texto.split(":")
+        return HabilidadRequerida(habilidades_por_nombre[nombre], int(nivel_minimo))

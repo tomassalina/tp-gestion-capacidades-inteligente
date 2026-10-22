@@ -1,5 +1,6 @@
 from area_de_trabajo import AreaDeTrabajo
 from habilidad import HabilidadRequerida
+from repositorio_csv import codificar_lista, decodificar_lista
 
 
 class Labor:
@@ -72,3 +73,34 @@ class Labor:
 
     def set_area(self, area):
         self._area = area
+
+    def guardar(self, repo):
+        repo.create(
+            id=self._id,
+            titulo=self._titulo,
+            descripcion=self._descripcion,
+            duracion_horas=self._duracion_horas,
+            habilidades_requeridas=codificar_lista(self._habilidades_requeridas, lambda h: h.a_texto()),
+            credenciales_requeridas=codificar_lista(self._credenciales_requeridas, lambda c: c),
+            area=self._area.get_nombre(),
+        )
+
+    @staticmethod
+    def cargar_todas(repo, areas_por_nombre, habilidades_por_nombre):
+        labores = []
+        for fila in repo.find_all():
+            habilidades_requeridas = decodificar_lista(
+                fila["habilidades_requeridas"],
+                lambda texto: HabilidadRequerida.desde_texto(texto, habilidades_por_nombre),
+            )
+            credenciales_requeridas = decodificar_lista(fila["credenciales_requeridas"], lambda c: c)
+            labores.append(Labor(
+                int(fila["id"]),
+                fila["titulo"],
+                fila["descripcion"],
+                float(fila["duracion_horas"]),
+                habilidades_requeridas,
+                credenciales_requeridas,
+                areas_por_nombre[fila["area"]],
+            ))
+        return labores

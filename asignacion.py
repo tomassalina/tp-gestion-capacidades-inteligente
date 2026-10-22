@@ -143,3 +143,27 @@ class Asignacion:
 
     def aprobar(self):
         self.set_estado(EstadoAsignacion.APROBADA)
+
+    def guardar(self, repo):
+        repo.create(
+            id=f"{self._trabajador.get_id()}|{self._labor.get_id()}|{self._franja.get_nombre()}|{self._fecha.isoformat()}",
+            trabajador_id=self._trabajador.get_id(),
+            labor_id=self._labor.get_id(),
+            franja=self._franja.get_nombre(),
+            fecha=self._fecha.isoformat(),
+            estado=self._estado,
+        )
+
+    @staticmethod
+    def cargar_todas(repo, trabajadores_por_id, labores_por_id):
+        # se reconstruyen con el constructor real (vuelve a correr validar_apto), para no
+        # poder tener nunca una Asignacion persistida que sea invalida
+        asignaciones = []
+        for fila in repo.find_all():
+            trabajador = trabajadores_por_id[int(fila["trabajador_id"])]
+            labor = labores_por_id[int(fila["labor_id"])]
+            franja = labor.get_area().buscar_franja(fila["franja"])
+            fecha = date.fromisoformat(fila["fecha"])
+            asignacion = Asignacion(trabajador, labor, franja, fecha, asignaciones, estado=fila["estado"])
+            asignaciones.append(asignacion)
+        return asignaciones

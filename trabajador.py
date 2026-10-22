@@ -1,6 +1,7 @@
 from datetime import date
 from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
 from credencial_profesional import CredencialProfesional
+from repositorio_csv import codificar_lista, decodificar_lista
 
 
 class Trabajador:
@@ -107,3 +108,46 @@ class Trabajador:
 
     def solicitar_asignacion(self, sistema, labor, franja, fecha):
         sistema.solicitar_asignacion(self, labor, franja, fecha)
+
+    def _atributos_a_texto(self):
+        return ";".join(f"{clave}={valor}" for clave, valor in self._atributos.items())
+
+    @staticmethod
+    def _atributos_desde_texto(texto):
+        atributos = {}
+        if texto != "":
+            for par in texto.split(";"):
+                clave, valor = par.split("=", 1)
+                atributos[clave] = valor
+        return atributos
+
+    def guardar(self, repo):
+        repo.create(
+            id=self._id,
+            nombre=self._nombre,
+            habilidades=codificar_lista(self._habilidades, lambda h: h.a_texto()),
+            credenciales=codificar_lista(self._credenciales, lambda c: c.a_texto()),
+            horas_maximas_semana=self._horas_maximas_semana,
+            atributos=self._atributos_a_texto(),
+        )
+
+    @staticmethod
+    def _desde_fila(fila, habilidades_por_nombre, clase):
+        habilidades = decodificar_lista(
+            fila["habilidades"],
+            lambda texto: HabilidadDeTrabajador.desde_texto(texto, habilidades_por_nombre),
+        )
+        credenciales = decodificar_lista(fila["credenciales"], CredencialProfesional.desde_texto)
+        atributos = Trabajador._atributos_desde_texto(fila["atributos"])
+        return clase(
+            int(fila["id"]),
+            fila["nombre"],
+            habilidades,
+            credenciales,
+            float(fila["horas_maximas_semana"]),
+            **atributos,
+        )
+
+    @staticmethod
+    def cargar_todos(repo, habilidades_por_nombre):
+        return list(map(lambda fila: Trabajador._desde_fila(fila, habilidades_por_nombre, Trabajador), repo.find_all()))

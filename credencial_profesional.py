@@ -39,3 +39,11 @@ class CredencialProfesional:
 
     def esta_activa(self, fecha_referencia):
         return self._fecha_obtencion <= fecha_referencia <= self._fecha_caducidad
+
+    def a_texto(self):
+        return f"{self._nombre}|{self._fecha_obtencion.isoformat()}|{self._fecha_caducidad.isoformat()}"
+
+    @staticmethod
+    def desde_texto(texto):
+        nombre, fecha_obtencion, fecha_caducidad = texto.split("|")
+        return CredencialProfesional(nombre, date.fromisoformat(fecha_obtencion), date.fromisoformat(fecha_caducidad))

@@ -1,10 +1,35 @@
+import os
+from datetime import date
 from asignacion import Asignacion, EstadoAsignacion, TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError
 from trabajador import Trabajador
+from supervisor import Supervisor
+from habilidad import Habilidad
 from area_de_trabajo import AreaDeTrabajo
 from labor import Labor
 from cola import Cola
+from repositorio_csv import RepositorioCSV
 
 ERRORES_ASIGNACION = (TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError)
+
+COLUMNAS_HABILIDADES = ["id", "nombre"]
+COLUMNAS_AREAS = ["id", "nombre", "credenciales_obligatorias", "franjas"]
+COLUMNAS_LABORES = ["id", "titulo", "descripcion", "duracion_horas", "habilidades_requeridas", "credenciales_requeridas", "area"]
+COLUMNAS_TRABAJADORES = ["id", "nombre", "habilidades", "credenciales", "horas_maximas_semana", "atributos"]
+COLUMNAS_ASIGNACIONES = ["id", "trabajador_id", "labor_id", "franja", "fecha", "estado"]
+COLUMNAS_COLA = ["id", "trabajador_id", "labor_id", "franja", "fecha"]
+
+
+def _armar_repos(directorio):
+    os.makedirs(directorio, exist_ok=True)
+    return {
+        "habilidades": RepositorioCSV(os.path.join(directorio, "habilidades.csv"), COLUMNAS_HABILIDADES),
+        "areas": RepositorioCSV(os.path.join(directorio, "areas.csv"), COLUMNAS_AREAS),
+        "labores": RepositorioCSV(os.path.join(directorio, "labores.csv"), COLUMNAS_LABORES),
+        "trabajadores": RepositorioCSV(os.path.join(directorio, "trabajadores.csv"), COLUMNAS_TRABAJADORES),
+        "supervisores": RepositorioCSV(os.path.join(directorio, "supervisores.csv"), COLUMNAS_TRABAJADORES),
+        "asignaciones": RepositorioCSV(os.path.join(directorio, "asignaciones.csv"), COLUMNAS_ASIGNACIONES),
+        "cola_pendientes": RepositorioCSV(os.path.join(directorio, "cola_pendientes.csv"), COLUMNAS_COLA),
+    }
 
 
 class Sistema:
@@ -153,3 +178,79 @@ class Sistema:
         self._reiniciar_horas_trabajadores()
         self._procesar_solicitudes_pendientes()
         return self.generar_sugerencias(fecha)
+
+    def _recolectar_habilidades(self):
+        # las Habilidad son compartidas (Trabajador y Labor apuntan a la misma por nombre),
+        # asi que se juntan y deduplican por nombre antes de guardarlas una sola vez
+        habilidades_por_nombre = {}
+        for trabajador in self._trabajadores:
+            for habilidad_de_trabajador in trabajador.get_habilidades():
+                habilidad = habilidad_de_trabajador.get_habilidad()
+                habilidades_por_nombre[habilidad.get_nombre()] = habilidad
+        for labor in self._labores:
+            for habilidad_requerida in labor.get_habilidades_requeridas():
+                habilidad = habilidad_requerida.get_habilidad()
+                habilidades_por_nombre[habilidad.get_nombre()] = habilidad
+        return list(habilidades_por_nombre.values())
+
+    def guardar_todo(self, directorio):
+        repos = _armar_repos(directorio)
+
+        for habilidad in self._recolectar_habilidades():
+            habilidad.guardar(repos["habilidades"])
+
+        for area in self._areas:
+            area.guardar(repos["areas"])
+
+        for labor in self._labores:
+            labor.guardar(repos["labores"])
+
+        for trabajador in self._trabajadores:
+            if isinstance(trabajador, Supervisor):
+                trabajador.guardar(repos["supervisores"])
+            else:
+                trabajador.guardar(repos["trabajadores"])
+
+        for asignacion in self._asignaciones:
+            asignacion.guardar(repos["asignaciones"])
+
+        for trabajador, labor, franja, fecha in self._solicitudes_pendientes.recorrer():
+            repos["cola_pendientes"].create(
+                id=f"{trabajador.get_id()}|{labor.get_id()}|{franja.get_nombre()}|{fecha.isoformat()}",
+                trabajador_id=trabajador.get_id(),
+                labor_id=labor.get_id(),
+                franja=franja.get_nombre(),
+                fecha=fecha.isoformat(),
+            )
+
+    @staticmethod
+    def cargar_todo(directorio):
+        repos = _armar_repos(directorio)
+
+        habilidades = Habilidad.cargar_todas(repos["habilidades"])
+        habilidades_por_nombre = {habilidad.get_nombre(): habilidad for habilidad in habilidades}
+
+        areas = AreaDeTrabajo.cargar_todas(repos["areas"])
+        areas_por_nombre = {area.get_nombre(): area for area in areas}
+
+        labores = Labor.cargar_todas(repos["labores"], areas_por_nombre, habilidades_por_nombre)
+        labores_por_id = {labor.get_id(): labor for labor in labores}
+
+        trabajadores = Trabajador.cargar_todos(repos["trabajadores"], habilidades_por_nombre)
+        supervisores = Supervisor.cargar_todos(repos["supervisores"], habilidades_por_nombre)
+        todos_los_trabajadores = trabajadores + supervisores
+        trabajadores_por_id = {trabajador.get_id(): trabajador for trabajador in todos_los_trabajadores}
+
+        sistema = Sistema(trabajadores=todos_los_trabajadores, areas=areas, labores=labores)
+
+        asignaciones = Asignacion.cargar_todas(repos["asignaciones"], trabajadores_por_id, labores_por_id)
+        sistema.obtener_asignaciones().extend(asignaciones)
+
+        for fila in repos["cola_pendientes"].find_all():
+            trabajador = trabajadores_por_id[int(fila["trabajador_id"])]
+            labor = labores_por_id[int(fila["labor_id"])]
+            franja = labor.get_area().buscar_franja(fila["franja"])
+            fecha = date.fromisoformat(fila["fecha"])
+            sistema.get_solicitudes_pendientes().encolar((trabajador, labor, franja, fecha))
+
+        return sistema
