@@ -77,6 +77,24 @@ st.markdown(
 st.title("🧩 Gestion de Capacidades Inteligente")
 st.caption("Software Co. — asignacion inteligente de personal a labores")
 
+with st.sidebar:
+    st.subheader("Persistencia (CSV)")
+    if st.button("💾 Guardar todo"):
+        sistema.guardar_todo()
+        st.success("Datos guardados en la carpeta 'data/'.")
+    if st.button("📂 Cargar guardado"):
+        sistema_cargado = Sistema.cargar_todo()
+        supervisor_cargado = next(
+            filter(lambda t: isinstance(t, Supervisor), sistema_cargado.get_trabajadores()), None
+        )
+        if supervisor_cargado is None:
+            st.error("No hay ningun Supervisor en los datos guardados.")
+        else:
+            st.session_state.sistema = sistema_cargado
+            st.session_state.supervisor = supervisor_cargado
+            st.success("Datos cargados desde 'data/'.")
+            st.rerun()
+
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Personal", len(sistema.get_trabajadores()))
 m2.metric("Areas", len(sistema.get_areas()))

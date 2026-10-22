@@ -206,3 +206,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Datos persistidos en CSV (se generan solos con Sistema.guardar_todo)
+/data/

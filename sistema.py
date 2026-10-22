@@ -11,6 +11,8 @@ from repositorio_csv import RepositorioCSV
 
 ERRORES_ASIGNACION = (TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError)
 
+DIRECTORIO_DATOS_DEFAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
 COLUMNAS_HABILIDADES = ["id", "nombre"]
 COLUMNAS_AREAS = ["id", "nombre", "credenciales_obligatorias", "franjas"]
 COLUMNAS_LABORES = ["id", "titulo", "descripcion", "duracion_horas", "habilidades_requeridas", "credenciales_requeridas", "area"]
@@ -193,7 +195,7 @@ class Sistema:
                 habilidades_por_nombre[habilidad.get_nombre()] = habilidad
         return list(habilidades_por_nombre.values())
 
-    def guardar_todo(self, directorio):
+    def guardar_todo(self, directorio=DIRECTORIO_DATOS_DEFAULT):
         repos = _armar_repos(directorio)
 
         for habilidad in self._recolectar_habilidades():
@@ -224,7 +226,7 @@ class Sistema:
             )
 
     @staticmethod
-    def cargar_todo(directorio):
+    def cargar_todo(directorio=DIRECTORIO_DATOS_DEFAULT):
         repos = _armar_repos(directorio)
 
         habilidades = Habilidad.cargar_todas(repos["habilidades"])

@@ -179,3 +179,7 @@ if __name__ == "__main__":
         sistema.obtener_asignaciones(),
     ))
     print(f"Asignaciones para esa labor+franja+fecha: {len(coincidencias_del_hueco)} (no se duplico)")
+
+    print("\n--- Se persiste todo el sistema en CSV ---")
+    sistema.guardar_todo()
+    print("Datos guardados en la carpeta 'data/'.")
