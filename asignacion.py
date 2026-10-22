@@ -16,7 +16,11 @@ class HorasMaximasExcedidasError(Exception):
 
 
 class TrabajadorNoAptoError(Exception):
-    pass
+
+    def __init__(self, mensaje, habilidades_faltantes=None, credenciales_faltantes=None):
+        super().__init__(mensaje)
+        self.habilidades_faltantes = habilidades_faltantes if habilidades_faltantes is not None else set()
+        self.credenciales_faltantes = credenciales_faltantes if credenciales_faltantes is not None else set()
 
 
 class FranjaSinLugarError(Exception):
@@ -107,19 +111,25 @@ class Asignacion:
 
     @staticmethod
     def validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes):
-        if not trabajador.tiene_habilidades(labor.get_habilidades_requeridas()):
-            raise TrabajadorNoAptoError(
-                f"{trabajador.get_nombre()} no tiene todas las habilidades requeridas por la labor '{labor.get_titulo()}'"
-            )
+        apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
+        apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
+        apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
 
-        if not trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha):
-            raise TrabajadorNoAptoError(
-                f"{trabajador.get_nombre()} no tiene las credenciales de la labor activas en la fecha {fecha}"
-            )
+        if not (apto_habilidades and apto_credenciales_labor and apto_credenciales_area):
+            habilidades_faltantes = trabajador.obtener_habilidades_faltantes(labor.get_habilidades_requeridas())
+            credenciales_faltantes = trabajador.obtener_credenciales_faltantes(
+                labor.get_credenciales_requeridas(), fecha
+            ) | trabajador.obtener_credenciales_faltantes(labor.get_area().get_credenciales_obligatorias(), fecha)
 
-        if not trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha):
+            partes = []
+            if habilidades_faltantes:
+                partes.append(f"habilidades {sorted(habilidades_faltantes)}")
+            if credenciales_faltantes:
+                partes.append(f"credenciales {sorted(credenciales_faltantes)}")
             raise TrabajadorNoAptoError(
-                f"{trabajador.get_nombre()} no tiene las credenciales obligatorias del area '{labor.get_area().get_nombre()}' activas"
+                f"{trabajador.get_nombre()} no es apto para la labor '{labor.get_titulo()}': le faltan " + " y ".join(partes),
+                habilidades_faltantes=habilidades_faltantes,
+                credenciales_faltantes=credenciales_faltantes,
             )
 
         if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):

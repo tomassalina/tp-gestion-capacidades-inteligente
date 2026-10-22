@@ -65,6 +65,59 @@ def test_tiene_credenciales_activas_respeta_todas_las_requeridas():
     assert not trabajador.tiene_credenciales_activas(["Carnet", "Otra"], date(2026, 1, 1))
 
 
+def test_registrar_dos_veces_la_misma_habilidad_no_duplica_el_repertorio():
+    soldadura = Habilidad("Soldadura")
+    trabajador = Trabajador(1, "Ana", [HabilidadDeTrabajador(soldadura, NivelHabilidad.BASICO)], [], 20)
+    trabajador.agregar_habilidad(HabilidadDeTrabajador(soldadura, NivelHabilidad.AVANZADO))
+    assert len(trabajador.get_habilidades()) == 1
+
+
+def test_constructor_tambien_deduplica_habilidades_repetidas():
+    soldadura = Habilidad("Soldadura")
+    trabajador = Trabajador(
+        1, "Ana",
+        [HabilidadDeTrabajador(soldadura, NivelHabilidad.BASICO), HabilidadDeTrabajador(soldadura, NivelHabilidad.AVANZADO)],
+        [], 20,
+    )
+    assert len(trabajador.get_habilidades()) == 1
+
+
+def test_obtener_habilidades_faltantes_sin_repeticiones():
+    python = Habilidad("Python")
+    sql = Habilidad("SQL")
+    trabajador = Trabajador(1, "Ana", [], [], 20)
+    requeridas = [
+        HabilidadRequerida(python, NivelHabilidad.BASICO),
+        HabilidadRequerida(sql, NivelHabilidad.BASICO),
+        HabilidadRequerida(python, NivelHabilidad.AVANZADO),
+    ]
+    assert trabajador.obtener_habilidades_faltantes(requeridas) == {"Python", "SQL"}
+
+
+def test_obtener_credenciales_faltantes():
+    vigente = CredencialProfesional("Carnet", date(2025, 1, 1), date(2027, 1, 1))
+    trabajador = Trabajador(1, "Ana", [], [vigente], 20)
+    faltantes = trabajador.obtener_credenciales_faltantes(["Carnet", "NDA"], date(2026, 1, 1))
+    assert faltantes == {"NDA"}
+
+
+def test_habilidades_en_comun_y_exclusivas_entre_dos_trabajadores():
+    python = Habilidad("Python")
+    sql = Habilidad("SQL")
+    excel = Habilidad("Excel")
+    ana = Trabajador(1, "Ana", [
+        HabilidadDeTrabajador(python, NivelHabilidad.BASICO),
+        HabilidadDeTrabajador(sql, NivelHabilidad.BASICO),
+    ], [], 20)
+    beto = Trabajador(2, "Beto", [
+        HabilidadDeTrabajador(sql, NivelHabilidad.BASICO),
+        HabilidadDeTrabajador(excel, NivelHabilidad.BASICO),
+    ], [], 20)
+    assert ana.habilidades_en_comun(beto) == {"SQL"}
+    assert ana.habilidades_exclusivas(beto) == {"Python"}
+    assert beto.habilidades_exclusivas(ana) == {"Excel"}
+
+
 def test_solicitar_asignacion_delega_en_el_sistema_con_mock():
     trabajador = Trabajador(1, "Ana", [], [], 20)
     labor_mock = MagicMock()

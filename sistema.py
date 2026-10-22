@@ -1,3 +1,5 @@
+from collections import namedtuple
+from datetime import datetime
 from asignacion import Asignacion, EstadoAsignacion, TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError
 from trabajador import Trabajador
 from area_de_trabajo import AreaDeTrabajo
@@ -5,6 +7,17 @@ from labor import Labor
 from cola import Cola
 
 ERRORES_ASIGNACION = (TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError)
+
+# Clave inmutable (namedtuple) que identifica un momento y lugar: una vez creada,
+# ninguno de sus campos puede reasignarse por error desde otra parte del codigo.
+ClaveOcupacion = namedtuple("ClaveOcupacion", ["fecha", "franja", "area"])
+
+
+class TipoAccionBitacora:
+
+    PROPUESTA = "Propuesta"
+    APROBACION = "Aprobacion"
+    REVERSION = "Reversion"
 
 
 class Sistema:
@@ -21,6 +34,8 @@ class Sistema:
         self._labores = labores or []
         self._solicitudes_pendientes, self._asignaciones = Cola(), []
         self._trabajadores_por_id = {}
+        self._ocupacion = {}
+        self._bitacora = []
         self._reindexar_trabajadores()
 
     def get_trabajadores(self):
@@ -52,6 +67,40 @@ class Sistema:
 
     def obtener_asignaciones(self):
         return self._asignaciones
+
+    def _clave_ocupacion(self, fecha, franja, area):
+        return ClaveOcupacion(fecha, franja, area)
+
+    def registrar_ocupacion(self, fecha, franja, area):
+        clave = self._clave_ocupacion(fecha, franja, area)
+        self._ocupacion[clave] = self._ocupacion.get(clave, 0) + 1
+
+    def liberar_ocupacion(self, fecha, franja, area):
+        clave = self._clave_ocupacion(fecha, franja, area)
+        if clave in self._ocupacion:
+            self._ocupacion[clave] = max(0, self._ocupacion[clave] - 1)
+
+    def contar_ocupacion(self, fecha, franja, area):
+        return self._ocupacion.get(self._clave_ocupacion(fecha, franja, area), 0)
+
+    def registrar_en_bitacora(self, tipo_accion, labor, trabajador):
+        registro = (datetime.now(), tipo_accion, labor, trabajador)
+        self._bitacora.append(registro)
+        return registro
+
+    def obtener_bitacora(self):
+        return tuple(self._bitacora)
+
+    def aprobar_asignacion(self, asignacion):
+        asignacion.aprobar()
+        self.registrar_en_bitacora(TipoAccionBitacora.APROBACION, asignacion.get_labor(), asignacion.get_trabajador())
+
+    def revertir_asignacion(self, asignacion):
+        asignacion.rechazar()
+        if asignacion in self._asignaciones:
+            self._asignaciones.remove(asignacion)
+        self.liberar_ocupacion(asignacion.get_fecha(), asignacion.get_franja(), asignacion.get_labor().get_area())
+        self.registrar_en_bitacora(TipoAccionBitacora.REVERSION, asignacion.get_labor(), asignacion.get_trabajador())
 
     def get_solicitudes_pendientes(self):
         return self._solicitudes_pendientes
@@ -100,6 +149,8 @@ class Sistema:
                 print(f"No se pudo procesar la solicitud de {trabajador.get_nombre()} para '{labor.get_titulo()}': {e}")
             else:
                 self._asignaciones.append(nueva_asignacion)
+                self.registrar_ocupacion(fecha, franja, labor.get_area())
+                self.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, trabajador)
 
     def _reiniciar_horas_trabajadores(self):
         for trabajador in self._trabajadores:
@@ -145,11 +196,14 @@ class Sistema:
                     print(f"No se pudo generar sugerencia para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}': {e}")
                 else:
                     self._asignaciones.append(sugerencia)
+                    self.registrar_ocupacion(fecha, franja, labor.get_area())
+                    self.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, candidato)
                     nuevas_sugerencias.append(sugerencia)
         return nuevas_sugerencias
 
     def ciclo_semanal(self, fecha):
         self._asignaciones = []
+        self._ocupacion = {}
         self._reiniciar_horas_trabajadores()
         self._procesar_solicitudes_pendientes()
         return self.generar_sugerencias(fecha)

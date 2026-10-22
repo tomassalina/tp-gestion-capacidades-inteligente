@@ -7,7 +7,7 @@ from asignacion import Asignacion, AsignacionDuplicadaError, EstadoAsignacion
 from franja import Franja
 from habilidad import Habilidad, HabilidadDeTrabajador, HabilidadRequerida, NivelHabilidad
 from labor import Labor
-from sistema import Sistema
+from sistema import Sistema, TipoAccionBitacora
 from trabajador import Trabajador
 
 
@@ -121,6 +121,68 @@ def test_solicitar_asignacion_duplicada_en_la_cola_lanza_error(sistema_con_ana):
     with pytest.raises(AsignacionDuplicadaError):
         sistema.solicitar_asignacion(trabajador, labor, franja, fecha)
     assert len(sistema.get_solicitudes_pendientes()) == 1
+
+
+def test_contar_ocupacion_es_inmediato_y_no_recorre_asignaciones(sistema_con_ana):
+    sistema, trabajador, labor, franja = sistema_con_ana
+    fecha = date(2026, 1, 1)
+    area = labor.get_area()
+    assert sistema.contar_ocupacion(fecha, franja, area) == 0
+
+    sistema.generar_sugerencias(fecha)
+    assert sistema.contar_ocupacion(fecha, franja, area) == 1
+
+    asignacion = sistema.obtener_asignaciones()[0]
+    sistema.revertir_asignacion(asignacion)
+    assert sistema.contar_ocupacion(fecha, franja, area) == 0
+
+
+def test_clave_de_ocupacion_no_se_puede_alterar_una_vez_creada(sistema_con_ana):
+    sistema, trabajador, labor, franja = sistema_con_ana
+    clave = sistema._clave_ocupacion(date(2026, 1, 1), franja, labor.get_area())
+    with pytest.raises(AttributeError):
+        clave.franja = "otra"
+
+
+def test_bitacora_registra_propuesta_y_aprobacion(sistema_con_ana):
+    sistema, trabajador, labor, franja = sistema_con_ana
+    fecha = date(2026, 1, 1)
+    sistema.generar_sugerencias(fecha)
+    asignacion = sistema.obtener_asignaciones()[0]
+    sistema.aprobar_asignacion(asignacion)
+
+    tipos = [tipo for _, tipo, _, _ in sistema.obtener_bitacora()]
+    assert tipos == [TipoAccionBitacora.PROPUESTA, TipoAccionBitacora.APROBACION]
+    for _, _, labor_registrada, trabajador_registrado in sistema.obtener_bitacora():
+        assert labor_registrada == labor
+        assert trabajador_registrado == trabajador
+
+
+def test_bitacora_registra_reversion_y_no_se_borra_en_ciclo_semanal(sistema_con_ana):
+    sistema, trabajador, labor, franja = sistema_con_ana
+    fecha = date(2026, 1, 1)
+    sistema.generar_sugerencias(fecha)
+    asignacion = sistema.obtener_asignaciones()[0]
+    sistema.revertir_asignacion(asignacion)
+
+    sistema.ciclo_semanal(date(2026, 1, 2))
+
+    tipos = [tipo for _, tipo, _, _ in sistema.obtener_bitacora()]
+    assert TipoAccionBitacora.REVERSION in tipos
+    assert len(sistema.obtener_bitacora()) >= 2
+
+
+def test_bitacora_es_definitiva_no_se_puede_modificar_un_registro(sistema_con_ana):
+    sistema, trabajador, labor, franja = sistema_con_ana
+    sistema.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, trabajador)
+    registro = sistema.obtener_bitacora()[0]
+
+    with pytest.raises(TypeError):
+        registro[1] = TipoAccionBitacora.APROBACION
+
+    bitacora_obtenida = sistema.obtener_bitacora()
+    with pytest.raises(AttributeError):
+        bitacora_obtenida.append(registro)
 
 
 def test_ciclo_semanal_prioriza_solicitud_del_trabajador_sobre_sugerencia_automatica(sistema_con_ana):
