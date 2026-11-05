@@ -363,8 +363,12 @@ flecha_horizontal_a_altura_fija("Cola", "Nodo", 70, triangulo=True)           # 
 flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="b", ld="t")       # herencia (Agenda queda arriba)
 
 flecha_horizontal_entre_columnas("Trabajador", "Agenda", punto_de_borde(cajas["Agenda"], "l")[1])  # tiene
+flecha_horizontal_entre_columnas("CredencialProfesional", "Trabajador", punto_de_borde(cajas["CredencialProfesional"], "r")[1])  # posee
+flecha_horizontal_entre_columnas("Asignacion", "Trabajador", punto_de_borde(cajas["Asignacion"], "r")[1])  # trabajador
+flecha_horizontal_entre_columnas("Sistema", "TipoAccionBitacora", punto_de_borde(cajas["TipoAccionBitacora"], "l")[1])  # usa
 
 flecha_entre("Franja", "AreaDeTrabajo", triangulo=True, lo="t", ld="b")       # tiene
+flecha_salteando("Labor", "AreaDeTrabajo", lado="r")                          # salta Franja, en
 
 # Referencia
 rx, ry = COL1, fin + 60
