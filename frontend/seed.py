@@ -137,4 +137,4 @@ if __name__ == "__main__":
     print(f"Trabajadores: {len(sistema.get_trabajadores())}")
     print(f"Areas: {len(sistema.get_areas())}")
     print(f"Labores: {len(sistema.get_labores())}")
-    print(f"Solicitudes en cola: {len(sistema.get_solicitudes_pendientes())}")
+    print(f"Solicitudes en cola: {sistema.get_solicitudes_pendientes().get_cantidad()}")

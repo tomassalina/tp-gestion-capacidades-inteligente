@@ -88,7 +88,7 @@ def test_sistema_guarda_y_recarga_todo_el_grafo(tmp_path, escenario_completo):
     assert asignaciones[0].get_trabajador().get_nombre() == "Beto"
     assert asignaciones[0].get_estado() == "Aprobada"
 
-    assert len(recargado.get_solicitudes_pendientes()) == 1
+    assert recargado.get_solicitudes_pendientes().get_cantidad() == 1
 
 
 def test_sistema_recargado_comparte_la_misma_habilidad_entre_trabajador_y_labor(tmp_path, escenario_completo):

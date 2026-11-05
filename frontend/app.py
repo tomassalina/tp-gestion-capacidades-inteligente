@@ -99,7 +99,7 @@ m1, m2, m3, m4 = st.columns(4)
 m1.metric("Personal", len(sistema.get_trabajadores()))
 m2.metric("Areas", len(sistema.get_areas()))
 m3.metric("Labores", len(sistema.get_labores()))
-m4.metric("Solicitudes en cola", len(sistema.get_solicitudes_pendientes()))
+m4.metric("Solicitudes en cola", sistema.get_solicitudes_pendientes().get_cantidad())
 
 tab_flujo, tab_personal, tab_areas, tab_asignaciones, tab_reglas = st.tabs(
     ["Flujo Guiado", "Personal", "Areas y Labores", "Asignaciones", "Reglas"]
@@ -146,7 +146,7 @@ with tab_flujo:
 
     st.divider()
     st.markdown("### Paso 3 — El sistema procesa la cola y recomienda lo que falta")
-    st.caption(f"Solicitudes esperando en la cola ahora mismo: {len(sistema.get_solicitudes_pendientes())}")
+    st.caption(f"Solicitudes esperando en la cola ahora mismo: {sistema.get_solicitudes_pendientes().get_cantidad()}")
     if st.button("Correr el ciclo (procesa pedidos + genera automaticas)"):
         nuevas = sistema.ciclo_semanal(fecha_demo)
         st.success(f"Listo. {len(nuevas)} asignacion(es) Automatica(s) nueva(s) generada(s).")

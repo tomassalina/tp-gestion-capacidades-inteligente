@@ -43,6 +43,11 @@ class Cola:
         self.cantidad -= 1
         return nodo_saliente.get_dato()
 
+    def get_inicio(self):
+        if self.esta_vacia():
+            raise IndexError("La cola esta vacia")
+        return self.inicio.get_dato()
+
     def recorrer(self):
         elementos = []
         actual = self.inicio
@@ -51,5 +56,5 @@ class Cola:
             actual = actual.get_siguiente()
         return elementos
 
-    def __len__(self):
+    def get_cantidad(self):
         return self.cantidad

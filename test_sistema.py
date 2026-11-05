@@ -120,7 +120,7 @@ def test_solicitar_asignacion_duplicada_en_la_cola_lanza_error(sistema_con_ana):
     sistema.solicitar_asignacion(trabajador, labor, franja, fecha)
     with pytest.raises(AsignacionDuplicadaError):
         sistema.solicitar_asignacion(trabajador, labor, franja, fecha)
-    assert len(sistema.get_solicitudes_pendientes()) == 1
+    assert sistema.get_solicitudes_pendientes().get_cantidad() == 1
 
 
 def test_contar_ocupacion_es_inmediato_y_no_recorre_asignaciones(sistema_con_ana):
