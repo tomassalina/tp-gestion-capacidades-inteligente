@@ -13958,7 +13958,7 @@
       "type": "arrow",
       "x": 1480,
       "y": 270,
-      "width": 1,
+      "width": 90,
       "height": 366,
       "strokeColor": "#1e1e1e",
       "strokeWidth": 2,
@@ -13970,7 +13970,9 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "roundness": null,
+      "roundness": {
+        "type": 2
+      },
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
@@ -13986,6 +13988,14 @@
           366
         ],
         [
+          90,
+          366
+        ],
+        [
+          90,
+          0
+        ],
+        [
           0,
           0
         ]
@@ -13994,7 +14004,8 @@
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "elbowed": true
     },
     {
       "id": "arrow-9380",
@@ -14259,7 +14270,7 @@
       "type": "arrow",
       "x": 2000,
       "y": 432,
-      "width": 1,
+      "width": 90,
       "height": 330,
       "strokeColor": "#1e1e1e",
       "strokeWidth": 2,
@@ -14271,7 +14282,9 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "roundness": null,
+      "roundness": {
+        "type": 2
+      },
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
@@ -14287,6 +14300,14 @@
           330
         ],
         [
+          90,
+          330
+        ],
+        [
+          90,
+          0
+        ],
+        [
           0,
           0
         ]
@@ -14295,7 +14316,8 @@
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "elbowed": true
     },
     {
       "id": "rectangle-9387",

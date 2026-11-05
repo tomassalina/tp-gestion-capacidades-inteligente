@@ -327,13 +327,34 @@ def flecha_horizontal_entre_columnas(origen, destino, y_absoluto, triangulo=Fals
     elementos.append(flecha(x1, y_absoluto, x2, y_absoluto, triangulo=triangulo))
 
 
+def flecha_elbow(puntos, triangulo=False):
+    xs = [p[0] for p in puntos]
+    ys = [p[1] for p in puntos]
+    el = _base("arrow", min(xs), min(ys), (max(xs) - min(xs)) or 1, (max(ys) - min(ys)) or 1)
+    ox, oy = el["x"], el["y"]
+    el["points"] = [[px - ox, py - oy] for px, py in puntos]
+    el["lastCommittedPoint"] = None
+    el["startBinding"] = None
+    el["endBinding"] = None
+    el["startArrowhead"] = None
+    el["endArrowhead"] = "triangle_outline" if triangulo else "arrow"
+    el["elbowed"] = True
+    el["roundness"] = {"type": 2}
+    return el
+
+
 def flecha_salteando(origen_abajo, destino_arriba, lado="r", triangulo=False):
-    # conecta dos cajas de la MISMA columna que no son vecinas directas, por
-    # el borde (no por el medio) para no cruzar la caja que queda en el medio
+    # conecta dos cajas de la MISMA columna que no son vecinas directas: en
+    # vez de pegarse al borde, hace un "elbow" bien ancho hacia afuera para
+    # rodear la caja que queda en el medio sin tocarla
     ox, oy, ow, oh = cajas[origen_abajo]
     dx, dy, dw, dh = cajas[destino_arriba]
     x = ox + ow if lado == "r" else ox
-    elementos.append(flecha(x, oy, x, dy + dh, triangulo=triangulo))
+    bulto = x + 90 if lado == "r" else x - 90
+    elementos.append(flecha_elbow(
+        [(x, oy), (bulto, oy), (bulto, dy + dh), (x, dy + dh)],
+        triangulo=triangulo,
+    ))
 
 
 # ---------------------------------------------------------------------------
