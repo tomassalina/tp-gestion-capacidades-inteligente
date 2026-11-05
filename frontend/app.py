@@ -4,6 +4,9 @@ Este modulo NO reimplementa ninguna regla de negocio: todo el trabajo real
 (validaciones, asignaciones, aprobaciones, etc.) lo hacen las clases del
 directorio padre (Sistema, Supervisor, Trabajador, etc.). Esta app solo arma
 la interfaz y llama a los metodos publicos de esas clases.
+
+Navegacion por rol: Trabajador / Supervisor / Sistema, igual que en la vida
+real alguien se loguearia con un usuario distinto segun que necesite hacer.
 """
 
 import os
@@ -14,594 +17,317 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import streamlit as st
 
-from area_de_trabajo import AreaDeTrabajo
-from asignacion import EstadoAsignacion
+from asignacion import Asignacion, AsignacionDuplicadaError, EstadoAsignacion, FranjaSinLugarError, HorasMaximasExcedidasError, TrabajadorNoAptoError
 from credencial_profesional import CredencialProfesional
-from franja import Franja
-from datetime import timedelta
-from habilidad import Habilidad, HabilidadDeTrabajador, HabilidadRequerida, NivelHabilidad
-from credencial_profesional import CredencialProfesional
-from labor import Labor
+from habilidad import NivelHabilidad
 from sistema import Sistema
 from supervisor import Supervisor
 from trabajador import Trabajador
+from seed import armar_seed
 
 NOMBRES_NIVEL = {
-    NivelHabilidad.BASICO: "Basico",
+    NivelHabilidad.BASICO: "Básico",
     NivelHabilidad.INTERMEDIO: "Intermedio",
     NivelHabilidad.AVANZADO: "Avanzado",
 }
 
-
-def candidatos_para_reasignar(asignacion, trabajadores):
-    labor = asignacion.get_labor()
-    fecha = asignacion.get_fecha()
-    candidatos = []
-    for trabajador in trabajadores:
-        if trabajador == asignacion.get_trabajador():
-            continue
-        if not trabajador.tiene_habilidades(labor.get_habilidades_requeridas()):
-            continue
-        if not trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha):
-            continue
-        if not trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha):
-            continue
-        if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
-            continue
-        candidatos.append(trabajador)
-    return candidatos
-
-
-from seed import armar_seed
-
+st.set_page_config(page_title="Gestión de Capacidades", layout="wide", page_icon="🧩")
 
 if "sistema" not in st.session_state:
-    st.session_state.sistema, st.session_state.supervisor = armar_seed()
-if "atributos_rows" not in st.session_state:
-    st.session_state.atributos_rows = []
-if "atributos_counter" not in st.session_state:
-    st.session_state.atributos_counter = 0
-
+    st.session_state.sistema = armar_seed()[0]
 sistema: Sistema = st.session_state.sistema
-supervisor: Supervisor = st.session_state.supervisor
 
-st.set_page_config(page_title="Gestion de Capacidades", layout="wide", page_icon="🧩")
-st.markdown(
-    """<style>
-    .block-container {padding-top: 2rem; max-width: 1200px;}
-    h1 {font-weight: 800;}
-    div[data-testid="stMetric"] {background: rgba(127,127,127,0.08); border-radius: 10px; padding: 12px;}
-    </style>""",
-    unsafe_allow_html=True,
-)
-st.title("🧩 Gestion de Capacidades Inteligente")
-st.caption("Software Co. — asignacion inteligente de personal a labores")
 
-with st.sidebar:
-    st.subheader("Persistencia (CSV)")
-    if st.button("💾 Guardar todo"):
+# ---------------------------------------------------------------------------
+# Barra superior: titulo + persistencia (siempre visible, no escondida)
+# ---------------------------------------------------------------------------
+col_titulo, col_guardar, col_cargar = st.columns([3, 1, 1])
+with col_titulo:
+    st.title("🧩 Gestión de Capacidades Inteligente")
+    st.caption("Asignación inteligente de personal a labores, por fecha, franja y área")
+with col_guardar:
+    st.write("")
+    if st.button("💾 Guardar todo", width="stretch"):
         sistema.guardar_todo()
-        st.success("Datos guardados en la carpeta 'data/'.")
-    if st.button("📂 Cargar guardado"):
-        sistema_cargado = Sistema.cargar_todo()
-        supervisor_cargado = next(
-            filter(lambda t: isinstance(t, Supervisor), sistema_cargado.get_trabajadores()), None
-        )
-        if supervisor_cargado is None:
-            st.error("No hay ningun Supervisor en los datos guardados.")
-        else:
-            st.session_state.sistema = sistema_cargado
-            st.session_state.supervisor = supervisor_cargado
-            st.success("Datos cargados desde 'data/'.")
-            st.rerun()
+        st.toast("Guardado en la carpeta data/", icon="💾")
+with col_cargar:
+    st.write("")
+    if st.button("📂 Cargar guardado", width="stretch"):
+        st.session_state.sistema = Sistema.cargar_todo()
+        st.toast("Datos recuperados desde data/", icon="📂")
+        st.rerun()
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Personal", len(sistema.get_trabajadores()))
-m2.metric("Areas", len(sistema.get_areas()))
-m3.metric("Labores", len(sistema.get_labores()))
-m4.metric("Solicitudes en cola", sistema.get_solicitudes_pendientes().get_cantidad())
+st.divider()
 
-tab_flujo, tab_personal, tab_areas, tab_asignaciones, tab_reglas = st.tabs(
-    ["Flujo Guiado", "Personal", "Areas y Labores", "Asignaciones", "Reglas"]
+
+# ---------------------------------------------------------------------------
+# Selector de rol: como loguearse con un usuario distinto
+# ---------------------------------------------------------------------------
+rol = st.radio(
+    "Entrar como:",
+    ["👷 Trabajador", "🧑‍💼 Supervisor", "⚙️ Sistema (automático)"],
+    horizontal=True,
+    label_visibility="collapsed",
 )
 
-# ---------------------------------------------------------------------------
-# Tab 0: Flujo Guiado
-# ---------------------------------------------------------------------------
-with tab_flujo:
-    st.subheader("De la solicitud a la asignacion, paso a paso")
-    st.caption("Seguí los pasos en orden. Cada uno usa los metodos reales de Sistema/Supervisor, nada se simula.")
+trabajadores_comunes = [t for t in sistema.get_trabajadores() if not isinstance(t, Supervisor)]
+supervisores = [t for t in sistema.get_trabajadores() if isinstance(t, Supervisor)]
 
-    fecha_demo = st.date_input("Fecha para esta demo", value=date.today(), key="demo_fecha")
-    labor_demo = sistema.get_labores()[0] if sistema.get_labores() else None
-    franja_demo = labor_demo.get_area().get_franjas()[0] if labor_demo else None
 
-    st.markdown("### Paso 1 — Arrancar desde cero")
-    if st.button("Reiniciar todo (recarga los datos de ejemplo)"):
-        st.session_state.sistema, st.session_state.supervisor = armar_seed()
-        st.session_state.pop("demo_resultados", None)
-        st.rerun()
+def tabla(filas):
+    st.dataframe(filas, width="stretch", hide_index=True) if filas else st.caption("No hay nada para mostrar todavía.")
 
-    st.divider()
-    st.markdown("### Paso 2 — Tres trabajadores piden la misma labor")
-    if labor_demo and franja_demo:
-        st.write(f"Labor: **{labor_demo.get_titulo()}** — Franja: **{franja_demo.get_nombre()}** — Fecha: **{fecha_demo}**")
-        if st.button("Que 3 trabajadores soliciten este turno"):
-            disponibles = sistema.buscar_trabajadores_disponibles(labor_demo, franja_demo, fecha_demo)
-            no_disponibles = [t for t in sistema.get_trabajadores() if t not in disponibles]
-            candidatos = disponibles[:2] + no_disponibles[:1]
-            resultados = []
-            for t in candidatos:
-                try:
-                    t.solicitar_asignacion(sistema, labor_demo, franja_demo, fecha_demo)
-                    resultados.append(("ok", f"{t.get_nombre()}: solicitud aceptada, va a la cola."))
-                except Exception as e:
-                    resultados.append(("error", f"{t.get_nombre()}: rechazado al instante — {e}"))
-            st.session_state.demo_resultados = resultados
-            st.rerun()
-        for tipo, texto in st.session_state.get("demo_resultados", []):
-            (st.success if tipo == "ok" else st.error)(texto)
+
+def mostrar_error_de_asignacion(error):
+    if isinstance(error, TrabajadorNoAptoError):
+        partes = []
+        if error.habilidades_faltantes:
+            partes.append(f"habilidades: {', '.join(sorted(error.habilidades_faltantes))}")
+        if error.credenciales_faltantes:
+            partes.append(f"credenciales: {', '.join(sorted(error.credenciales_faltantes))}")
+        st.error(f"No es apto. Le falta — {' · '.join(partes)}")
     else:
-        st.info("No hay labores cargadas.")
+        st.error(str(error))
 
-    st.divider()
-    st.markdown("### Paso 3 — El sistema procesa la cola y recomienda lo que falta")
-    st.caption(f"Solicitudes esperando en la cola ahora mismo: {sistema.get_solicitudes_pendientes().get_cantidad()}")
-    if st.button("Correr el ciclo (procesa pedidos + genera automaticas)"):
-        nuevas = sistema.ciclo_semanal(fecha_demo)
-        st.success(f"Listo. {len(nuevas)} asignacion(es) Automatica(s) nueva(s) generada(s).")
-        st.rerun()
 
-    st.divider()
-    st.markdown("### Paso 4 — El supervisor aprueba, rechaza o reasigna")
-    pendientes_del_dia = [
-        a for a in sistema.obtener_asignaciones()
-        if a.get_fecha() == fecha_demo and a.get_estado() != EstadoAsignacion.APROBADA
-    ]
-    if not pendientes_del_dia:
-        st.info("No hay nada pendiente de revisar para esta fecha todavia.")
-    for i, a in enumerate(pendientes_del_dia):
-        with st.container(border=True):
-            st.write(
-                f"**{a.get_trabajador().get_nombre()}** -> **{a.get_labor().get_titulo()}** "
-                f"en '{a.get_franja().get_nombre()}' — estado: **{a.get_estado()}**"
+# ---------------------------------------------------------------------------
+# Rol: Trabajador
+# ---------------------------------------------------------------------------
+if rol == "👷 Trabajador":
+    nombre_sel = st.selectbox("¿Quién sos?", [t.get_nombre() for t in trabajadores_comunes], key="trabajador_sel")
+    trabajador = next(t for t in trabajadores_comunes if t.get_nombre() == nombre_sel)
+
+    tab_perfil, tab_agenda, tab_solicitar, tab_pendientes = st.tabs(
+        ["Mi perfil", "Mi agenda", "Solicitar asignación", "Mis solicitudes pendientes"]
+    )
+
+    with tab_perfil:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Habilidades")
+            if trabajador.get_habilidades():
+                tabla([
+                    {"Habilidad": h.get_habilidad().get_nombre(), "Nivel": NOMBRES_NIVEL[h.get_nivel()]}
+                    for h in trabajador.get_habilidades()
+                ])
+            else:
+                st.warning("Sin habilidades cargadas todavía — no va a ser apto para ninguna labor que las exija.")
+        with c2:
+            st.subheader("Credenciales")
+            tabla([
+                {
+                    "Credencial": c.get_nombre(),
+                    "Caduca": c.get_fecha_caducidad(),
+                    "Estado": "✅ Vigente" if c.esta_activa(date.today()) else "⛔ Vencida",
+                }
+                for c in trabajador.get_credenciales()
+            ])
+
+        st.subheader("Horas esta semana")
+        maximas = trabajador.get_horas_maximas_semana()
+        asignadas = trabajador.get_horas_asignadas()
+        st.progress(min(asignadas / maximas, 1.0), text=f"{asignadas} / {maximas} hs")
+
+        st.subheader("Atributos opcionales (**kwargs)")
+        atributos = trabajador.get_atributos()
+        st.write(", ".join(f"**{k}**: {v}" for k, v in atributos.items()) or "Sin atributos opcionales.")
+
+        st.subheader("Comparar con otro trabajador")
+        otro_nombre = st.selectbox(
+            "Comparar con", [t.get_nombre() for t in trabajadores_comunes if t != trabajador], key="comparar_con"
+        )
+        if otro_nombre:
+            otro = next(t for t in trabajadores_comunes if t.get_nombre() == otro_nombre)
+            c1, c2 = st.columns(2)
+            c1.metric("Habilidades en común", len(trabajador.habilidades_en_comun(otro)))
+            c2.metric("Habilidades exclusivas suyas", len(trabajador.habilidades_exclusivas(otro)))
+
+    with tab_agenda:
+        st.caption("Lista enlazada (`Agenda`), siempre ordenada por fecha y franja — regla 17.")
+        agenda = trabajador.get_agenda().recorrer()
+        tabla([
+            {
+                "Fecha": a.get_fecha(), "Franja": a.get_franja().get_nombre(),
+                "Labor": a.get_labor().get_titulo(), "Estado": a.get_estado(),
+            }
+            for a in agenda
+        ])
+
+    with tab_solicitar:
+        labores = sistema.get_labores()
+        id_labor = st.selectbox(
+            "Labor", [l.get_id() for l in labores],
+            format_func=lambda lid: next(l.get_titulo() for l in labores if l.get_id() == lid),
+            key="sol_labor",
+        )
+        labor = next(l for l in labores if l.get_id() == id_labor)
+        franja = st.selectbox(
+            "Franja", labor.get_area().get_franjas(), format_func=lambda f: f.get_nombre(), key="sol_franja"
+        )
+        fecha = st.date_input("Fecha", value=date.today(), key="sol_fecha")
+        if st.button("Solicitar asignación", type="primary"):
+            try:
+                trabajador.solicitar_asignacion(sistema, labor, franja, fecha)
+                st.success("Solicitud enviada — queda esperando en la cola hasta que se procese.")
+            except (TrabajadorNoAptoError, AsignacionDuplicadaError, HorasMaximasExcedidasError, FranjaSinLugarError) as e:
+                mostrar_error_de_asignacion(e)
+
+    with tab_pendientes:
+        propias = [
+            s for s in sistema.get_solicitudes_pendientes().recorrer() if s[0] == trabajador
+        ]
+        tabla([
+            {"Labor": labor.get_titulo(), "Franja": franja.get_nombre(), "Fecha": fecha}
+            for (_, labor, franja, fecha) in propias
+        ])
+
+
+# ---------------------------------------------------------------------------
+# Rol: Supervisor
+# ---------------------------------------------------------------------------
+elif rol == "🧑‍💼 Supervisor":
+    nombre_sel = st.selectbox("¿Quién sos?", [s.get_nombre() for s in supervisores], key="supervisor_sel")
+    supervisor = next(s for s in supervisores if s.get_nombre() == nombre_sel)
+
+    tab_disp, tab_cola, tab_directo, tab_reglas, tab_bitacora, tab_ocupacion = st.tabs(
+        ["Disponibilidad", "Cola y pendientes", "Asignar directo", "Reglas del área", "Bitácora", "Ocupación"]
+    )
+
+    with tab_disp:
+        labores = sistema.get_labores()
+        id_labor = st.selectbox(
+            "Labor", [l.get_id() for l in labores],
+            format_func=lambda lid: next(l.get_titulo() for l in labores if l.get_id() == lid),
+            key="disp_labor",
+        )
+        labor = next(l for l in labores if l.get_id() == id_labor)
+        franja = st.selectbox("Franja", labor.get_area().get_franjas(), format_func=lambda f: f.get_nombre(), key="disp_franja")
+        fecha = st.date_input("Fecha", value=date.today(), key="disp_fecha")
+
+        disponibles = sistema.buscar_trabajadores_disponibles(labor, franja, fecha)
+        st.subheader(f"Disponibles ({len(disponibles)})")
+        tabla([{"Nombre": t.get_nombre(), "Rol": t.get_atributo("rol", "-")} for t in disponibles])
+
+        st.subheader("¿Por qué alguien no está disponible?")
+        no_disponibles = [t for t in trabajadores_comunes if t not in disponibles]
+        if no_disponibles:
+            nombre_chequear = st.selectbox(
+                "Trabajador", [t.get_nombre() for t in no_disponibles], key="disp_chequear"
             )
-            b1, b2, b3 = st.columns(3)
-            if b1.button("Aprobar", key=f"flujo_aprobar_{i}"):
+            trabajador_chequear = next(t for t in no_disponibles if t.get_nombre() == nombre_chequear)
+            try:
+                Asignacion.evaluar_aptitud(trabajador_chequear, labor, fecha)
+                st.info("Es apto en habilidades/credenciales/horas — no aparece disponible por capacidad de la franja o exclusividad de la labor (regla 6 o 7).")
+            except TrabajadorNoAptoError as e:
+                mostrar_error_de_asignacion(e)
+            except (HorasMaximasExcedidasError,) as e:
+                st.error(str(e))
+        else:
+            st.caption("Todos los trabajadores están disponibles para esta combinación.")
+
+    with tab_cola:
+        st.subheader("Cola de solicitudes (FIFO)")
+        cola = sistema.get_solicitudes_pendientes().recorrer()
+        tabla([
+            {"Trabajador": t.get_nombre(), "Labor": labor.get_titulo(), "Franja": franja.get_nombre(), "Fecha": fecha}
+            for (t, labor, franja, fecha) in cola
+        ])
+        if st.button("▶️ Procesar cola ahora"):
+            sistema.procesar_solicitudes_pendientes()
+            st.rerun()
+
+        st.divider()
+        st.subheader("Asignaciones sin resolver (Pendiente / Automática)")
+        sin_resolver = [a for a in sistema.obtener_asignaciones() if a.get_estado() != EstadoAsignacion.APROBADA]
+        for i, a in enumerate(sin_resolver):
+            c1, c2, c3, c4 = st.columns([3, 1, 1, 2])
+            c1.write(f"**{a.get_trabajador().get_nombre()}** → {a.get_labor().get_titulo()} ({a.get_franja().get_nombre()}, {a.get_fecha()}) — *{a.get_estado()}*")
+            if c2.button("Aprobar", key=f"aprobar_{i}"):
                 supervisor.aprobar_asignacion(sistema, a)
                 st.rerun()
-            if b2.button("Rechazar", key=f"flujo_rechazar_{i}"):
+            if c3.button("Rechazar", key=f"rechazar_{i}"):
                 supervisor.rechazar_asignacion(sistema, a)
                 st.rerun()
-            otros = candidatos_para_reasignar(a, sistema.get_trabajadores())
-            if otros:
-                id_otro = b3.selectbox(
-                    "Reasignar a", [t.get_id() for t in otros],
-                    format_func=lambda tid: next(t.get_nombre() for t in otros if t.get_id() == tid),
-                    key=f"flujo_reasignar_sel_{i}", label_visibility="collapsed",
-                )
-                if b3.button("Confirmar reasignar", key=f"flujo_reasignar_btn_{i}"):
-                    nuevo_t = next(t for t in otros if t.get_id() == id_otro)
-                    supervisor.reasignar_asignacion(a, nuevo_t)
+            otros = [t for t in trabajadores_comunes if t != a.get_trabajador()]
+            nuevo_nombre = c4.selectbox("Reasignar a", [t.get_nombre() for t in otros], key=f"reasignar_{i}", label_visibility="collapsed")
+            if c4.button("Confirmar reasignación", key=f"confirmar_reasignar_{i}"):
+                try:
+                    supervisor.reasignar_asignacion(a, next(t for t in otros if t.get_nombre() == nuevo_nombre))
                     st.rerun()
-            else:
-                b3.caption("Nadie mas es apto para esta labor.")
+                except (TrabajadorNoAptoError, HorasMaximasExcedidasError) as e:
+                    mostrar_error_de_asignacion(e)
+        if not sin_resolver:
+            st.caption("No hay asignaciones pendientes ni automáticas en este momento.")
 
-    st.divider()
-    st.markdown("### Paso 5 — ¿Quedaron todas las labores cubiertas?")
-    cobertura = []
-    for labor in sistema.get_labores():
-        for franja in labor.get_area().get_franjas():
-            cubierta = any(
-                a.get_labor() == labor and a.get_franja() == franja and a.get_fecha() == fecha_demo
-                and a.get_estado() == EstadoAsignacion.APROBADA
-                for a in sistema.obtener_asignaciones()
-            )
-            cobertura.append({
-                "Area": labor.get_area().get_nombre(),
-                "Labor": labor.get_titulo(),
-                "Franja": franja.get_nombre(),
-                "Cubierta (Aprobada)": "Si" if cubierta else "No",
-            })
-    st.dataframe(cobertura, width="stretch", hide_index=True)
+    with tab_directo:
+        id_labor = st.selectbox(
+            "Labor", [l.get_id() for l in sistema.get_labores()],
+            format_func=lambda lid: next(l.get_titulo() for l in sistema.get_labores() if l.get_id() == lid),
+            key="directo_labor",
+        )
+        labor = next(l for l in sistema.get_labores() if l.get_id() == id_labor)
+        franja = st.selectbox("Franja", labor.get_area().get_franjas(), format_func=lambda f: f.get_nombre(), key="directo_franja")
+        fecha = st.date_input("Fecha", value=date.today(), key="directo_fecha")
+        trabajador_nombre = st.selectbox("Trabajador", [t.get_nombre() for t in trabajadores_comunes], key="directo_trabajador")
+        if st.button("Asignar directo", type="primary"):
+            trabajador = next(t for t in trabajadores_comunes if t.get_nombre() == trabajador_nombre)
+            try:
+                supervisor.asignar_trabajador(sistema, trabajador, labor, franja, fecha)
+                st.success(f"{trabajador.get_nombre()} asignado directamente, ya Aprobado.")
+            except (TrabajadorNoAptoError, AsignacionDuplicadaError, HorasMaximasExcedidasError, FranjaSinLugarError) as e:
+                mostrar_error_de_asignacion(e)
+
+    with tab_reglas:
+        area_sel = st.selectbox("Área", [a.get_nombre() for a in sistema.get_areas()], key="reglas_area")
+        area = next(a for a in sistema.get_areas() if a.get_nombre() == area_sel)
+        st.write("**Credenciales obligatorias actuales:**", ", ".join(area.get_credenciales_obligatorias()) or "-")
+        nueva = st.text_input("Nueva credencial obligatoria", key="reglas_nueva")
+        if st.button("Agregar regla") and nueva.strip():
+            supervisor.agregar_regla_area(area, nueva.strip())
+            st.rerun()
+
+    with tab_bitacora:
+        st.caption("Registro inmutable de toda propuesta, aprobación y reversión — regla 18.")
+        registros = sorted(sistema.obtener_bitacora(), key=lambda r: r[0], reverse=True)
+        tabla([
+            {"Fecha y hora": r[0], "Acción": r[1], "Labor": r[2].get_titulo(), "Trabajador": r[3].get_nombre()}
+            for r in registros
+        ])
+
+    with tab_ocupacion:
+        st.caption("Consulta inmediata por fecha+franja+área, sin recorrer asignaciones — regla 16.")
+        area_sel = st.selectbox("Área", [a.get_nombre() for a in sistema.get_areas()], key="ocup_area")
+        area = next(a for a in sistema.get_areas() if a.get_nombre() == area_sel)
+        franja = st.selectbox("Franja", area.get_franjas(), format_func=lambda f: f.get_nombre(), key="ocup_franja")
+        fecha = st.date_input("Fecha", value=date.today(), key="ocup_fecha")
+        ocupados = sistema.contar_ocupacion(fecha, franja, area)
+        st.metric("Ocupación", f"{ocupados} / {franja.get_capacidad()}")
+
 
 # ---------------------------------------------------------------------------
-# Tab 1: Personal
+# Rol: Sistema (simula lo que en la vida real correria un cron de noche)
 # ---------------------------------------------------------------------------
-with tab_personal:
-    st.subheader("Personal registrado")
+else:
+    st.info("No hay cron real posible en una demo: este rol simula lo que el sistema haría automáticamente al cierre de cada semana.")
+    fecha = st.date_input("Fecha para el nuevo ciclo", value=date.today(), key="sistema_fecha")
 
-    filas = []
-    for trabajador in sistema.get_trabajadores():
-        filas.append(
+    antes = len(sistema.obtener_asignaciones())
+    if st.button("▶️ Ejecutar ciclo semanal completo", type="primary", width="stretch"):
+        nuevas = sistema.ciclo_semanal(fecha)
+        st.success(
+            f"Ciclo ejecutado: horas reiniciadas (regla 12), cola procesada, y se generaron {len(nuevas)} sugerencias automáticas (regla 11)."
+        )
+        tabla([
             {
-                "ID": trabajador.get_id(),
-                "Nombre": trabajador.get_nombre(),
-                "Rol": "Supervisor" if isinstance(trabajador, Supervisor) else "Trabajador",
-                "Admin": "Si" if isinstance(trabajador, Supervisor) else "No",
-                "Horas asignadas": trabajador.get_horas_asignadas(),
-                "Horas maximas": trabajador.get_horas_maximas_semana(),
-                "Habilidades": ", ".join(
-                    f"{h.get_habilidad().get_nombre()} ({NOMBRES_NIVEL.get(h.get_nivel(), h.get_nivel())})"
-                    for h in trabajador.get_habilidades()
-                )
-                or "-",
-                "Credenciales": ", ".join(c.get_nombre() for c in trabajador.get_credenciales()) or "-",
-                "Atributos": ", ".join(f"{k}={v}" for k, v in trabajador.get_atributos().items()) or "-",
+                "Trabajador": s.get_trabajador().get_nombre(), "Labor": s.get_labor().get_titulo(),
+                "Franja": s.get_franja().get_nombre(), "Estado": s.get_estado(),
             }
-        )
-    st.dataframe(filas, width="stretch", hide_index=True)
-
-    with st.expander("Gestionar habilidades y credenciales de un trabajador"):
-        if sistema.get_trabajadores():
-            nombres_habilidad_catalogo = sorted(set(
-                h.get_habilidad().get_nombre()
-                for t in sistema.get_trabajadores()
-                for h in t.get_habilidades()
-            ))
-            nombres_credencial_catalogo = sorted(set(
-                c.get_nombre() for t in sistema.get_trabajadores() for c in t.get_credenciales()
-            ))
-
-            id_sel = st.selectbox(
-                "Trabajador", [t.get_id() for t in sistema.get_trabajadores()],
-                format_func=lambda tid: sistema.buscar_trabajador_por_id(tid).get_nombre(),
-                key="gestion_trabajador",
-            )
-            trabajador_sel = sistema.buscar_trabajador_por_id(id_sel)
-
-            st.markdown("**Habilidades actuales**")
-            if trabajador_sel.get_habilidades():
-                for i, h in enumerate(trabajador_sel.get_habilidades()):
-                    hc1, hc2 = st.columns([4, 1])
-                    hc1.write(f"{h.get_habilidad().get_nombre()} — {NOMBRES_NIVEL[h.get_nivel()]}")
-                    if hc2.button("Quitar", key=f"quitar_hab_{id_sel}_{i}"):
-                        restantes = [x for j, x in enumerate(trabajador_sel.get_habilidades()) if j != i]
-                        trabajador_sel.set_habilidades(restantes)
-                        st.rerun()
-            else:
-                st.caption("No tiene habilidades cargadas.")
-
-            ah1, ah2, ah3 = st.columns([2, 2, 1])
-            habilidad_elegida = ah1.selectbox(
-                "Agregar habilidad", ["(nueva)"] + nombres_habilidad_catalogo, key="agregar_habilidad_catalogo"
-            )
-            habilidad_nueva_texto = ah1.text_input(
-                "Nombre si es nueva", key="agregar_habilidad_texto", disabled=habilidad_elegida != "(nueva)"
-            )
-            nivel_a_agregar = ah2.selectbox(
-                "Nivel", [NivelHabilidad.BASICO, NivelHabilidad.INTERMEDIO, NivelHabilidad.AVANZADO],
-                format_func=lambda n: NOMBRES_NIVEL[n], key="agregar_habilidad_nivel",
-            )
-            if ah3.button("Agregar", key="agregar_habilidad_btn"):
-                nombre_habilidad = habilidad_nueva_texto.strip() if habilidad_elegida == "(nueva)" else habilidad_elegida
-                if nombre_habilidad:
-                    nueva_lista = trabajador_sel.get_habilidades() + [
-                        HabilidadDeTrabajador(Habilidad(nombre_habilidad), nivel_a_agregar)
-                    ]
-                    trabajador_sel.set_habilidades(nueva_lista)
-                    st.rerun()
-                else:
-                    st.error("Elegi del catalogo o escribi un nombre nuevo.")
-
-            st.divider()
-            st.markdown("**Credenciales actuales**")
-            if trabajador_sel.get_credenciales():
-                for i, c in enumerate(trabajador_sel.get_credenciales()):
-                    vigente = "vigente" if c.esta_activa(date.today()) else "VENCIDA"
-                    cc1, cc2 = st.columns([4, 1])
-                    cc1.write(f"{c.get_nombre()} — caduca {c.get_fecha_caducidad()} ({vigente})")
-                    if cc2.button("Quitar", key=f"quitar_cred_{id_sel}_{i}"):
-                        restantes = [x for j, x in enumerate(trabajador_sel.get_credenciales()) if j != i]
-                        trabajador_sel.set_credenciales(restantes)
-                        st.rerun()
-            else:
-                st.caption("No tiene credenciales cargadas.")
-
-            ac1, ac2, ac3 = st.columns([2, 2, 1])
-            credencial_elegida = ac1.selectbox(
-                "Agregar credencial", ["(nueva)"] + nombres_credencial_catalogo, key="agregar_credencial_catalogo"
-            )
-            credencial_nueva_texto = ac1.text_input(
-                "Nombre si es nueva", key="agregar_credencial_texto", disabled=credencial_elegida != "(nueva)"
-            )
-            dias_vigencia = ac2.number_input(
-                "Dias hasta que caduca (negativo = vencida)", value=365, step=30, key="agregar_credencial_dias"
-            )
-            if ac3.button("Agregar", key="agregar_credencial_btn"):
-                nombre_credencial = credencial_nueva_texto.strip() if credencial_elegida == "(nueva)" else credencial_elegida
-                if nombre_credencial:
-                    nueva_credencial = CredencialProfesional(
-                        nombre_credencial,
-                        date.today() - timedelta(days=365),
-                        date.today() + timedelta(days=int(dias_vigencia)),
-                    )
-                    trabajador_sel.set_credenciales(trabajador_sel.get_credenciales() + [nueva_credencial])
-                    st.rerun()
-                else:
-                    st.error("Elegi del catalogo o escribi un nombre nuevo.")
-
-            st.divider()
-            st.markdown("**Agenda personal (lista enlazada, ordenada por fecha y franja)**")
-            agenda_trabajador = trabajador_sel.get_agenda().recorrer()
-            if agenda_trabajador:
-                st.dataframe(
-                    [
-                        {
-                            "Fecha": a.get_fecha(),
-                            "Franja": a.get_franja().get_nombre(),
-                            "Labor": a.get_labor().get_titulo(),
-                            "Estado": a.get_estado(),
-                        }
-                        for a in agenda_trabajador
-                    ],
-                    width="stretch", hide_index=True,
-                )
-            else:
-                st.caption("Todavia no tiene asignaciones en su agenda.")
+            for s in nuevas
+        ])
 
     st.divider()
-    st.subheader("Registrar nuevo trabajador")
-    st.caption(
-        "Los atributos adicionales se pasan como **kwargs a `sistema.registrar_personal(...)`."
-    )
-
-    col1, col2, col3 = st.columns(3)
-    nuevo_id = col1.number_input("ID", min_value=1, step=1, key="nuevo_id")
-    nuevo_nombre = col2.text_input("Nombre", key="nuevo_nombre")
-    nuevo_horas_max = col3.number_input("Horas maximas semanales", min_value=1, step=1, key="nuevo_horas_max")
-
-    st.caption("Habilidad (opcional)")
-    ch1, ch2 = st.columns(2)
-    nueva_habilidad_nombre = ch1.text_input("Nombre de la habilidad", key="nueva_habilidad_nombre")
-    nueva_habilidad_nivel = ch2.selectbox(
-        "Nivel", [NivelHabilidad.BASICO, NivelHabilidad.INTERMEDIO, NivelHabilidad.AVANZADO],
-        format_func=lambda n: NOMBRES_NIVEL[n], key="nueva_habilidad_nivel",
-    )
-
-    st.caption("Credencial (opcional)")
-    cc1, cc2 = st.columns(2)
-    nueva_credencial_nombre = cc1.text_input("Nombre de la credencial", key="nueva_credencial_nombre")
-    nueva_credencial_dias = cc2.number_input(
-        "Dias hasta que caduca (negativo = ya vencida)", value=365, step=30, key="nueva_credencial_dias"
-    )
-
-    st.caption("Atributos libres (clave/valor)")
-    for fila in list(st.session_state.atributos_rows):
-        fila_id = fila["id"]
-        c1, c2, c3 = st.columns([2, 2, 1])
-        c1.text_input("Clave", key=f"attr_clave_{fila_id}")
-        c2.text_input("Valor", key=f"attr_valor_{fila_id}")
-        if c3.button("Quitar", key=f"attr_quitar_{fila_id}"):
-            st.session_state.atributos_rows = [
-                f for f in st.session_state.atributos_rows if f["id"] != fila_id
-            ]
-            st.rerun()
-
-    if st.button("+ Agregar atributo"):
-        st.session_state.atributos_counter += 1
-        st.session_state.atributos_rows.append({"id": st.session_state.atributos_counter})
-        st.rerun()
-
-    if st.button("Registrar trabajador", type="primary"):
-        atributos = {}
-        for fila in st.session_state.atributos_rows:
-            clave = st.session_state.get(f"attr_clave_{fila['id']}", "").strip()
-            valor = st.session_state.get(f"attr_valor_{fila['id']}", "")
-            if clave:
-                atributos[clave] = valor
-        try:
-            nuevo = sistema.registrar_personal(
-                int(nuevo_id), nuevo_nombre, int(nuevo_horas_max), **atributos
-            )
-            if nueva_habilidad_nombre.strip():
-                nuevo.set_habilidades([
-                    HabilidadDeTrabajador(Habilidad(nueva_habilidad_nombre.strip()), nueva_habilidad_nivel)
-                ])
-            if nueva_credencial_nombre.strip():
-                nuevo.set_credenciales([
-                    CredencialProfesional(
-                        nueva_credencial_nombre.strip(),
-                        date.today() - timedelta(days=365),
-                        date.today() + timedelta(days=int(nueva_credencial_dias)),
-                    )
-                ])
-            st.session_state.atributos_rows = []
-            st.success(f"Trabajador '{nuevo.get_nombre()}' registrado correctamente.")
-            st.rerun()
-        except Exception as e:
-            st.error(str(e))
-
-# ---------------------------------------------------------------------------
-# Tab 2: Areas y Labores
-# ---------------------------------------------------------------------------
-with tab_areas:
-    st.subheader("Areas de trabajo")
-    fecha_ocupacion = st.date_input("Ver ocupacion para la fecha", value=date.today(), key="fecha_ocupacion_areas")
-    for area in sistema.get_areas():
-        with st.expander(f"Area: {area.get_nombre()}", expanded=True):
-            st.write("**Credenciales obligatorias:**", ", ".join(area.get_credenciales_obligatorias()) or "-")
-            franjas_info = [
-                {
-                    "Franja": franja.get_nombre(),
-                    "Capacidad": franja.get_capacidad(),
-                    "Ocupados": sistema.contar_ocupacion(fecha_ocupacion, franja, area),
-                    "Tiene lugar": sistema.contar_ocupacion(fecha_ocupacion, franja, area) < franja.get_capacidad(),
-                }
-                for franja in area.get_franjas()
-            ]
-            st.dataframe(franjas_info, width="stretch", hide_index=True)
-
-    st.divider()
-    st.subheader("Labores")
-    for labor in sistema.get_labores():
-        with st.expander(f"Labor: {labor.get_titulo()}", expanded=True):
-            st.write(labor.get_descripcion())
-            st.write("**Duracion:**", labor.get_duracion_horas(), "horas")
-            st.write("**Area:**", labor.get_area().get_nombre())
-            habilidades = ", ".join(
-                f"{h.get_habilidad().get_nombre()} (min. {NOMBRES_NIVEL.get(h.get_nivel_minimo(), h.get_nivel_minimo())})"
-                for h in labor.get_habilidades_requeridas()
-            )
-            st.write("**Habilidades requeridas:**", habilidades or "-")
-            st.write("**Credenciales requeridas:**", ", ".join(labor.get_credenciales_requeridas()) or "-")
-
-# ---------------------------------------------------------------------------
-# Tab 3: Asignaciones
-# ---------------------------------------------------------------------------
-with tab_asignaciones:
-    st.subheader("Acciones del sistema")
-    fecha_accion = st.date_input("Fecha", value=date.today(), key="fecha_accion")
-
-    col1, col2 = st.columns(2)
-    if col1.button("Generar sugerencias"):
-        try:
-            sugerencias = sistema.generar_sugerencias(fecha_accion)
-            st.success(f"Se generaron {len(sugerencias)} sugerencia(s).")
-            st.rerun()
-        except Exception as e:
-            st.error(str(e))
-
-    if col2.button("Ejecutar ciclo semanal"):
-        try:
-            nuevas = sistema.ciclo_semanal(fecha_accion)
-            st.success(f"Ciclo semanal ejecutado. Nuevas sugerencias: {len(nuevas)}.")
-            st.rerun()
-        except Exception as e:
-            st.error(str(e))
-
-    with st.expander("Flujo manual: solicitar asignacion y procesarla"):
-        trabajadores = sistema.get_trabajadores()
-        labores = sistema.get_labores()
-        if trabajadores and labores:
-            id_trabajador_sel = st.selectbox(
-                "Trabajador", [t.get_id() for t in trabajadores],
-                format_func=lambda tid: sistema.buscar_trabajador_por_id(tid).get_nombre(),
-                key="sol_trabajador",
-            )
-            t_sel = sistema.buscar_trabajador_por_id(id_trabajador_sel)
-            id_labor_sel = st.selectbox(
-                "Labor", [l.get_id() for l in labores],
-                format_func=lambda lid: next(l.get_titulo() for l in labores if l.get_id() == lid),
-                key="sol_labor",
-            )
-            l_sel = next(l for l in labores if l.get_id() == id_labor_sel)
-            franjas_area = l_sel.get_area().get_franjas()
-            if franjas_area:
-                nombre_franja_sel = st.selectbox(
-                    "Franja", [f.get_nombre() for f in franjas_area], key="sol_franja"
-                )
-                f_sel = next(f for f in franjas_area if f.get_nombre() == nombre_franja_sel)
-            else:
-                f_sel = None
-            fecha_sol = st.date_input("Fecha de la solicitud", value=date.today(), key="sol_fecha")
-            col_sol, col_asig = st.columns(2)
-            if col_sol.button("Solicitar asignacion", disabled=f_sel is None):
-                try:
-                    t_sel.solicitar_asignacion(sistema, l_sel, f_sel, fecha_sol)
-                    st.success("Solicitud agregada a la cola de pendientes.")
-                except Exception as e:
-                    st.error(str(e))
-            if col_asig.button("Carla asigna directamente (sin pasar por la cola)", disabled=f_sel is None):
-                try:
-                    supervisor.asignar_trabajador(sistema, t_sel, l_sel, f_sel, fecha_sol)
-                    st.success("Asignacion creada directamente, ya Aprobada.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(str(e))
-            if st.button("Procesar solicitudes pendientes (supervisor)"):
-                supervisor.ejecutar_acciones_del_sistema(sistema)
-                st.success("Solicitudes procesadas y horas semanales reiniciadas.")
-                st.rerun()
-        else:
-            st.info("Hace falta al menos un trabajador y una labor para solicitar una asignacion.")
-
-    st.divider()
-    st.subheader("Solicitudes en cola")
-    st.caption("Todavia no son asignaciones: son pedidos de trabajadores esperando a que el sistema los procese (FIFO).")
-
-    solicitudes_en_cola = sistema.get_solicitudes_pendientes().recorrer()
-    if not solicitudes_en_cola:
-        st.info("La cola esta vacia.")
-    else:
-        for orden, (trabajador_cola, labor_cola, franja_cola, fecha_cola) in enumerate(solicitudes_en_cola, start=1):
-            st.write(
-                f"{orden}. **{trabajador_cola.get_nombre()}** -> "
-                f"**{labor_cola.get_titulo()}** en franja '{franja_cola.get_nombre()}' el {fecha_cola}"
-            )
-
-    st.divider()
-    st.subheader("Asignaciones")
-
-    estados_disponibles = [EstadoAsignacion.AUTOMATICA, EstadoAsignacion.PENDIENTE, EstadoAsignacion.APROBADA]
-    filtro_estado = st.multiselect("Filtrar por estado", estados_disponibles, default=estados_disponibles)
-
-    asignaciones = [a for a in sistema.obtener_asignaciones() if a.get_estado() in filtro_estado]
-
-    if not asignaciones:
-        st.info("No hay asignaciones para los filtros seleccionados.")
-
-    for i, asignacion in enumerate(asignaciones):
-        with st.container(border=True):
-            st.write(
-                f"**{asignacion.get_trabajador().get_nombre()}** -> "
-                f"**{asignacion.get_labor().get_titulo()}** "
-                f"en franja '{asignacion.get_franja().get_nombre()}' "
-                f"el {asignacion.get_fecha()} — estado: **{asignacion.get_estado()}**"
-            )
-
-            if asignacion.get_estado() in (EstadoAsignacion.AUTOMATICA, EstadoAsignacion.PENDIENTE):
-                c1, c2, c3 = st.columns([1, 2, 1])
-                if c1.button("Aprobar", key=f"aprobar_{i}"):
-                    try:
-                        supervisor.aprobar_asignacion(sistema, asignacion)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(str(e))
-
-                otros = candidatos_para_reasignar(asignacion, sistema.get_trabajadores())
-                nuevo_trabajador = None
-                if otros:
-                    id_nuevo_trabajador = c2.selectbox(
-                        "Reasignar a",
-                        [t.get_id() for t in otros],
-                        format_func=lambda tid: next(t.get_nombre() for t in otros if t.get_id() == tid),
-                        key=f"reasignar_select_{i}",
-                        label_visibility="collapsed",
-                    )
-                    nuevo_trabajador = next(t for t in otros if t.get_id() == id_nuevo_trabajador)
-                if c3.button("Reasignar", key=f"reasignar_btn_{i}", disabled=nuevo_trabajador is None):
-                    try:
-                        supervisor.reasignar_asignacion(asignacion, nuevo_trabajador)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(str(e))
-
-    if st.button("Aprobar todas las pendientes"):
-        supervisor.aprobar_asignaciones_pendientes(sistema)
-        st.rerun()
-
-# ---------------------------------------------------------------------------
-# Tab 4: Reglas
-# ---------------------------------------------------------------------------
-with tab_reglas:
-    st.subheader("Agregar credencial obligatoria a un area")
-    areas = sistema.get_areas()
-    if areas:
-        nombre_area_sel = st.selectbox(
-            "Area", [a.get_nombre() for a in areas], key="regla_area"
-        )
-        area_sel = next(a for a in areas if a.get_nombre() == nombre_area_sel)
-        credencial_nombre = st.text_input("Nombre de la credencial obligatoria", key="regla_credencial")
-        if st.button("Agregar regla"):
-            if credencial_nombre.strip():
-                try:
-                    supervisor.agregar_regla_area(area_sel, credencial_nombre.strip())
-                    st.success(f"Credencial '{credencial_nombre}' agregada a '{area_sel.get_nombre()}'.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(str(e))
-            else:
-                st.error("El nombre de la credencial no puede estar vacio.")
-    else:
-        st.info("No hay areas registradas todavia.")
+    st.subheader("Estado actual del sistema")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Trabajadores", len(trabajadores_comunes))
+    c2.metric("Asignaciones activas", len(sistema.obtener_asignaciones()))
+    c3.metric("Solicitudes en cola", sistema.get_solicitudes_pendientes().get_cantidad())
