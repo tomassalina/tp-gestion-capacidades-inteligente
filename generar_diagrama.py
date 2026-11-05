@@ -167,16 +167,13 @@ def apilar(nombre, x, y_prev_fin, ancho, gap=50):
     return y + altura
 
 
-def flecha_entre(origen, destino, triangulo=False, label=None, lo="r", ld="l"):
+def flecha_entre(origen, destino, triangulo=False, lo="r", ld="l"):
     ox, oy, ow, oh = cajas[origen]
     dx, dy, dw, dh = cajas[destino]
     puntos = {"r": (ow, oh / 2), "l": (0, oh / 2), "b": (ow / 2, oh), "t": (ow / 2, 0)}
     x1, y1 = ox + puntos[lo][0], oy + puntos[lo][1]
     x2, y2 = dx + puntos[ld][0], dy + puntos[ld][1]
     elementos.append(flecha(x1, y1, x2, y2, triangulo=triangulo))
-    if label:
-        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-        elementos.append(texto(mx - len(label) * 3, my - 8, len(label) * 7 + 14, label, size=12))
 
 
 # ---------------------------------------------------------------------------
@@ -196,13 +193,15 @@ fin = apilar("Trabajador", COL2, None, ANCHO2, gap=0)
 fin = apilar("Supervisor", COL2, fin, ANCHO2)
 fin = apilar("Sistema", COL2, fin, ANCHO2)
 
-# Columna 3: Habilidad, HabilidadDeTrabajador, HabilidadRequerida, Nodo, ListaEnlazada, Cola, Agenda
+# Columna 3: Habilidad, HabilidadDeTrabajador, HabilidadRequerida, Nodo, Cola, ListaEnlazada, Agenda
+# (Nodo queda pegado a Cola porque Cola lo usa directamente; ListaEnlazada
+# queda pegada a Agenda porque Agenda hereda de ella)
 fin = apilar("Habilidad", COL3, None, ANCHO3, gap=0)
 fin = apilar("HabilidadDeTrabajador", COL3, fin, ANCHO3)
 fin = apilar("HabilidadRequerida", COL3, fin, ANCHO3)
 fin = apilar("Nodo", COL3, fin, ANCHO3)
-fin = apilar("ListaEnlazada", COL3, fin, ANCHO3)
 fin = apilar("Cola", COL3, fin, ANCHO3)
+fin = apilar("ListaEnlazada", COL3, fin, ANCHO3)
 fin = apilar("Agenda", COL3, fin, ANCHO3)
 
 # Columna 4: AreaDeTrabajo, Franja, Labor, TipoAccionBitacora, RepositorioCSV
@@ -213,26 +212,18 @@ fin = apilar("TipoAccionBitacora", COL4, fin, ANCHO4)
 fin = apilar("RepositorioCSV", COL4, fin, ANCHO4)
 
 # ---------------------------------------------------------------------------
-# Flechas: herencia (triangulo hueco) y relaciones de uso/composicion
+# Flechas: solo entre cajas adyacentes de la misma columna, asi quedan
+# verticales y cortas (sin cruzar el diagrama de punta a punta). El resto de
+# las relaciones ya se ve en el tipo de cada atributo (ej: "franja: Franja").
 # ---------------------------------------------------------------------------
-flecha_entre("Supervisor", "Trabajador", triangulo=True, lo="t", ld="b")
-flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="t", ld="b")
-flecha_entre("Cola", "Nodo", triangulo=True, label="usa", lo="t", ld="b")
-flecha_entre("ListaEnlazada", "Nodo", triangulo=True, lo="r", ld="r")
-flecha_entre("HabilidadDeTrabajador", "Habilidad", triangulo=True, label="usa", lo="t", ld="b")
-flecha_entre("HabilidadRequerida", "HabilidadDeTrabajador", triangulo=True, lo="t", ld="b")
-flecha_entre("Trabajador", "HabilidadDeTrabajador", label="tiene", lo="r", ld="l")
-flecha_entre("Trabajador", "CredencialProfesional", label="posee", lo="l", ld="r")
-flecha_entre("Trabajador", "Agenda", label="tiene", lo="r", ld="l")
-flecha_entre("Labor", "HabilidadRequerida", label="requiere", lo="l", ld="r")
-flecha_entre("Labor", "AreaDeTrabajo", label="en", lo="r", ld="l")
-flecha_entre("AreaDeTrabajo", "Franja", triangulo=True, label="tiene", lo="b", ld="t")
-flecha_entre("Asignacion", "Trabajador", label="trabajador", lo="r", ld="l")
-flecha_entre("Asignacion", "Labor", label="labor", lo="r", ld="l")
-flecha_entre("Asignacion", "Franja", label="franja", lo="r", ld="l")
-flecha_entre("Sistema", "Supervisor", label="gestiona", lo="l", ld="r")
-flecha_entre("Sistema", "Cola", label="usa", lo="r", ld="l")
-flecha_entre("Sistema", "RepositorioCSV", label="persiste con", lo="r", ld="l")
+flecha_entre("Supervisor", "Trabajador", triangulo=True, lo="t", ld="b")       # herencia
+flecha_entre("Sistema", "Supervisor", lo="t", ld="b")                         # gestiona
+
+flecha_entre("HabilidadDeTrabajador", "Habilidad", triangulo=True, lo="t", ld="b")
+flecha_entre("Cola", "Nodo", triangulo=True, lo="t", ld="b")                  # usa
+flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="t", ld="b")       # herencia
+
+flecha_entre("Franja", "AreaDeTrabajo", triangulo=True, lo="t", ld="b")       # tiene
 
 # Referencia
 rx, ry = COL1, fin + 60
