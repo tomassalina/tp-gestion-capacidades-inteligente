@@ -139,3 +139,33 @@ No solo las de esta extensión: así queda usada, con su virtud real, cada estru
 
 Las 6 estructuras que da el programa de la materia están cubiertas. De las 6 reglas nuevas de esta extensión se implementaron 4 (15, 16, 17, 18); 13 y 14 fueron una decisión consciente de no implementarlas (ver las notas en cada una), no un faltante.
 
+## Cómo ejecutar el proyecto
+
+No hay dependencias obligatorias para el programa en sí (solo librería estándar). El frontend necesita `streamlit`, y los tests `pytest`. La forma más simple, sin instalar nada a mano, es con [`uv`](https://docs.astral.sh/uv/):
+
+### Programa de consola (demo completa)
+
+```bash
+uv run --python 3.12 python main.py
+```
+
+Corre todas las reglas de negocio en secuencia (registro de personal, solicitudes, aprobaciones, sugerencias automáticas, reasignaciones, ciclo semanal) y al final persiste todo en `data/` (carpeta generada, ignorada por git).
+
+### Tests
+
+```bash
+uv run --python 3.12 --with pytest pytest -q
+```
+
+Corre los 128 tests (uno o más archivos por clase, con mocks en `test_asignacion.py`, `test_supervisor.py` y `test_trabajador.py`). Para ver un archivo puntual: `uv run --python 3.12 --with pytest pytest -q test_asignacion.py -v`.
+
+### Frontend (Streamlit)
+
+```bash
+uv run --python 3.12 --with streamlit streamlit run frontend/app.py
+```
+
+Abre en el navegador (por defecto `http://localhost:8501`). Tiene pestañas para el flujo guiado paso a paso, gestión de personal, áreas/labores, asignaciones (incluida la cola de solicitudes pendientes) y reglas del área, más los botones de "Guardar todo"/"Cargar guardado" en la barra lateral para la persistencia en CSV.
+
+**Sin `uv`:** instalar las dependencias una vez con `pip install streamlit pytest` y después correr con `python3 main.py`, `pytest -q` y `streamlit run frontend/app.py` directamente.
+
