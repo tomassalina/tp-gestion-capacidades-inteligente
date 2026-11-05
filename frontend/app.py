@@ -83,7 +83,10 @@ supervisores = [t for t in sistema.get_trabajadores() if isinstance(t, Superviso
 
 
 def tabla(filas):
-    st.dataframe(filas, width="stretch", hide_index=True) if filas else st.caption("No hay nada para mostrar todavía.")
+    if filas:
+        st.dataframe(filas, width="stretch", hide_index=True)
+    else:
+        st.caption("No hay nada para mostrar todavía.")
 
 
 def mostrar_error_de_asignacion(error):
@@ -102,7 +105,6 @@ def mostrar_error_de_asignacion(error):
 # Rol: Trabajador
 # ---------------------------------------------------------------------------
 if rol == "👷 Trabajador":
-    st.caption("Vista de un trabajador: su propio perfil, su agenda, y pedir que lo asignen a una labor.")
     nombre_sel = st.selectbox("¿Quién sos?", [t.get_nombre() for t in trabajadores_comunes], key="trabajador_sel")
     trabajador = next(t for t in trabajadores_comunes if t.get_nombre() == nombre_sel)
 
@@ -172,7 +174,6 @@ if rol == "👷 Trabajador":
             c2.metric("Habilidades exclusivas suyas", len(trabajador.habilidades_exclusivas(otro)))
 
     with tab_agenda:
-        st.caption("Lista enlazada (`Agenda`), siempre ordenada por fecha y franja — regla 17.")
         agenda = trabajador.get_agenda().recorrer()
         tabla([
             {
@@ -217,7 +218,6 @@ if rol == "👷 Trabajador":
 # Rol: Supervisor
 # ---------------------------------------------------------------------------
 elif rol == "🧑‍💼 Supervisor":
-    st.caption("Vista de un supervisor: ver disponibilidad, aprobar/rechazar/reasignar, asignar directo, y auditoría.")
     nombre_sel = st.selectbox("¿Quién sos?", [s.get_nombre() for s in supervisores], key="supervisor_sel")
     supervisor = next(s for s in supervisores if s.get_nombre() == nombre_sel)
 
@@ -250,7 +250,7 @@ elif rol == "🧑‍💼 Supervisor":
             trabajador_chequear = next(t for t in no_disponibles if t.get_nombre() == nombre_chequear)
             try:
                 Asignacion.evaluar_aptitud(trabajador_chequear, labor, fecha)
-                st.info("Es apto en habilidades/credenciales/horas — no aparece disponible por capacidad de la franja o exclusividad de la labor (regla 6 o 7).")
+                st.info("Es apto, pero no hay lugar en la franja o la labor ya está cubierta.")
             except TrabajadorNoAptoError as e:
                 mostrar_error_de_asignacion(e)
             except (HorasMaximasExcedidasError,) as e:
@@ -259,7 +259,7 @@ elif rol == "🧑‍💼 Supervisor":
             st.caption("Todos los trabajadores están disponibles para esta combinación.")
 
     with tab_cola:
-        st.subheader("Cola de solicitudes (FIFO)")
+        st.subheader("Cola de solicitudes")
         cola = sistema.get_solicitudes_pendientes().recorrer()
         tabla([
             {"Trabajador": t.get_nombre(), "Labor": labor.get_titulo(), "Franja": franja.get_nombre(), "Fecha": fecha}
@@ -324,7 +324,6 @@ elif rol == "🧑‍💼 Supervisor":
             st.rerun()
 
     with tab_registrar:
-        st.caption("Alta de personal nuevo con atributos opcionales (**kwargs) — extensión de consigna.")
         nuevo_id = st.number_input("Legajo (ID)", min_value=100, step=1, value=100, key="registrar_id")
         nuevo_nombre = st.text_input("Nombre", key="registrar_nombre")
         nuevas_horas = st.number_input("Horas máximas semana", min_value=1, value=20, key="registrar_horas")
@@ -344,7 +343,6 @@ elif rol == "🧑‍💼 Supervisor":
                 st.error(f"No se pudo registrar: {e}")
 
     with tab_catalogo:
-        st.caption("Áreas, franjas y labores existentes — reglas 3, 6 y 10.")
         for area in sistema.get_areas():
             with st.expander(area.get_nombre()):
                 st.write("**Credenciales obligatorias:**", ", ".join(area.get_credenciales_obligatorias()) or "-")
@@ -362,7 +360,6 @@ elif rol == "🧑‍💼 Supervisor":
         ])
 
     with tab_bitacora:
-        st.caption("Registro inmutable de toda propuesta, aprobación y reversión — regla 18.")
         registros = sorted(sistema.obtener_bitacora(), key=lambda r: r[0], reverse=True)
         tabla([
             {"Fecha y hora": r[0], "Acción": r[1], "Labor": r[2].get_titulo(), "Trabajador": r[3].get_nombre()}
@@ -370,7 +367,6 @@ elif rol == "🧑‍💼 Supervisor":
         ])
 
     with tab_ocupacion:
-        st.caption("Consulta inmediata por fecha+franja+área, sin recorrer asignaciones — regla 16.")
         area_sel = st.selectbox("Área", [a.get_nombre() for a in sistema.get_areas()], key="ocup_area")
         area = next(a for a in sistema.get_areas() if a.get_nombre() == area_sel)
         franja = st.selectbox("Franja", area.get_franjas(), format_func=lambda f: f.get_nombre(), key="ocup_franja")
@@ -383,16 +379,12 @@ elif rol == "🧑‍💼 Supervisor":
 # Rol: Sistema (simula lo que en la vida real correria un cron de noche)
 # ---------------------------------------------------------------------------
 else:
-    st.caption("Vista del sistema automático: lo que en la vida real correría solo, de noche, sin que nadie lo dispare a mano.")
-    st.info("No hay cron real posible en una demo: este rol simula lo que el sistema haría automáticamente al cierre de cada semana.")
+    st.caption("Simula lo que correría solo, automáticamente, al cierre de cada semana.")
     fecha = st.date_input("Fecha para el nuevo ciclo", value=date.today(), key="sistema_fecha")
 
-    antes = len(sistema.obtener_asignaciones())
     if st.button("▶️ Ejecutar ciclo semanal completo", type="primary", width="stretch"):
         nuevas = sistema.ciclo_semanal(fecha)
-        st.success(
-            f"Ciclo ejecutado: horas reiniciadas (regla 12), cola procesada, y se generaron {len(nuevas)} sugerencias automáticas (regla 11)."
-        )
+        st.success(f"Se generaron {len(nuevas)} sugerencias nuevas.")
         tabla([
             {
                 "Trabajador": s.get_trabajador().get_nombre(), "Labor": s.get_labor().get_titulo(),
