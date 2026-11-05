@@ -176,6 +176,13 @@ if __name__ == "__main__":
     ))
     print(f"Asignaciones para esa labor+franja+fecha: {len(coincidencias_del_hueco)} (no se duplico)")
 
+    print("\n--- Agenda personal de Ana (lista enlazada, siempre ordenada por fecha y franja) ---")
+    for asignacion_agendada in ana.get_agenda().recorrer():
+        print(
+            f"{asignacion_agendada.get_fecha()} ({asignacion_agendada.get_franja().get_nombre()}) -> "
+            f"{asignacion_agendada.get_labor().get_titulo()} ({asignacion_agendada.get_estado()})"
+        )
+
     print("\n--- Se persiste todo el sistema en CSV ---")
     sistema.guardar_todo()
     print("Datos guardados en la carpeta 'data/'.")

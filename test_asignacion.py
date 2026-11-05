@@ -44,6 +44,12 @@ def test_crear_asignacion_exitosa_queda_pendiente():
     assert trabajador.get_horas_asignadas() == 4
 
 
+def test_crear_asignacion_la_agenda_en_el_trabajador():
+    trabajador, labor, franja = armar_escenario()
+    asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
+    assert trabajador.get_agenda().recorrer() == [asignacion]
+
+
 def test_validar_apto_informa_brecha_de_habilidades_y_credenciales_sin_repetidos():
     habilidad = Habilidad("Coccion")
     franja = Franja("Manana", capacidad=1)
@@ -97,6 +103,8 @@ def test_reasignar_pendiente_cambia_trabajador():
     assert asignacion.get_trabajador() == otro_trabajador
     assert trabajador.get_horas_asignadas() == 0
     assert otro_trabajador.get_horas_asignadas() == 4
+    assert trabajador.get_agenda().recorrer() == []
+    assert otro_trabajador.get_agenda().recorrer() == [asignacion]
 
 
 def test_reasignar_a_trabajador_no_apto_lanza_error():
@@ -113,6 +121,7 @@ def test_rechazar_libera_horas():
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.rechazar()
     assert trabajador.get_horas_asignadas() == 0
+    assert trabajador.get_agenda().recorrer() == []
 
 
 def test_rechazar_aprobada_lanza_value_error():

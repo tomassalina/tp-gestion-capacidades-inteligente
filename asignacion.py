@@ -54,6 +54,7 @@ class Asignacion:
         self.franja = franja
         self.fecha = fecha
         self.estado = estado if estado is not None else EstadoAsignacion.PENDIENTE
+        trabajador.agregar_a_agenda(self)
         print(
             f"Labor '{labor.get_titulo()}' asignada a {trabajador.get_nombre()} "
             f"en la franja '{franja.get_nombre()}' (estado: {self.estado})"
@@ -84,13 +85,16 @@ class Asignacion:
         Asignacion.evaluar_aptitud(nuevo_trabajador, self.labor, self.fecha)
 
         self.trabajador.restar_horas(self.labor.get_duracion_horas())
+        self.trabajador.sacar_de_agenda(self)
         nuevo_trabajador.sumar_horas(self.labor.get_duracion_horas())
+        nuevo_trabajador.agregar_a_agenda(self)
         self.trabajador = nuevo_trabajador
 
     def rechazar(self):
         if self.estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede rechazar una asignacion ya Aprobada")
         self.trabajador.restar_horas(self.labor.get_duracion_horas())
+        self.trabajador.sacar_de_agenda(self)
 
     @staticmethod
     def evaluar_aptitud(trabajador, labor, fecha):

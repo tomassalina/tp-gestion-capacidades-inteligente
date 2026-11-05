@@ -2,6 +2,7 @@ from datetime import date
 from habilidad import Habilidad, NivelHabilidad, HabilidadDeTrabajador, HabilidadRequerida
 from credencial_profesional import CredencialProfesional
 from repositorio_csv import codificar_lista, decodificar_lista
+from agenda import Agenda
 
 
 class Trabajador:
@@ -32,6 +33,7 @@ class Trabajador:
         self.horas_maximas_semana = horas_maximas_semana
         self.horas_asignadas = 0
         self.atributos = atributos
+        self.agenda = Agenda()
 
     def get_id(self):
         return self.id
@@ -133,6 +135,15 @@ class Trabajador:
 
     def reiniciar_horas(self):
         self.horas_asignadas = 0
+
+    def get_agenda(self):
+        return self.agenda
+
+    def agregar_a_agenda(self, asignacion):
+        self.agenda.agregar(asignacion)
+
+    def sacar_de_agenda(self, asignacion):
+        self.agenda.eliminar(asignacion)
 
     def solicitar_asignacion(self, sistema, labor, franja, fecha):
         sistema.solicitar_asignacion(self, labor, franja, fecha)

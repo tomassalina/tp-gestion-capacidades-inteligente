@@ -321,6 +321,25 @@ with tab_personal:
                 else:
                     st.error("Elegi del catalogo o escribi un nombre nuevo.")
 
+            st.divider()
+            st.markdown("**Agenda personal (lista enlazada, ordenada por fecha y franja)**")
+            agenda_trabajador = trabajador_sel.get_agenda().recorrer()
+            if agenda_trabajador:
+                st.dataframe(
+                    [
+                        {
+                            "Fecha": a.get_fecha(),
+                            "Franja": a.get_franja().get_nombre(),
+                            "Labor": a.get_labor().get_titulo(),
+                            "Estado": a.get_estado(),
+                        }
+                        for a in agenda_trabajador
+                    ],
+                    width="stretch", hide_index=True,
+                )
+            else:
+                st.caption("Todavia no tiene asignaciones en su agenda.")
+
     st.divider()
     st.subheader("Registrar nuevo trabajador")
     st.caption(
