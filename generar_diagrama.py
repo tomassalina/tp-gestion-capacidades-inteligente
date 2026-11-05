@@ -146,6 +146,16 @@ TITLE_H = 26
 ANCHO_CHAR = 6.6
 
 
+def es_accesor(met, atributos):
+    return any(met in (f"get_{attr}", f"set_{attr}") for attr in atributos)
+
+
+def es_persistencia(met):
+    if met.startswith("guardar") or met.startswith("cargar_"):
+        return True
+    return "desde_texto" in met or "desde_fila" in met or "a_texto" in met
+
+
 def dibujar_clase(nombre, x, y, width):
     c = TODAS[nombre]
     caja_estructura = nombre in CLASES_ESTRUCTURA
@@ -158,10 +168,21 @@ def dibujar_clase(nombre, x, y, width):
         if (nombre, attr) in ATRIBUTOS_PSEUDO_ENUM:
             sufijo += f"  ({ATRIBUTOS_PSEUDO_ENUM[(nombre, attr)]})"
         lineas.append((f"- {attr}{sufijo}", subrayar))
-    if c["atributos"] and c["metodos"]:
+
+    # metodos agrupados (conservando el orden original dentro de cada grupo):
+    # 1) accesores get_/set_, 2) logica de negocio, 3) persistencia (CSV)
+    accesores = [m for m in c["metodos"] if es_accesor(m, c["atributos"])]
+    persistencia = [m for m in c["metodos"] if not es_accesor(m, c["atributos"]) and es_persistencia(m)]
+    negocio = [m for m in c["metodos"] if m not in accesores and m not in persistencia]
+
+    grupos = [g for g in [accesores, negocio, persistencia] if g]
+    if c["atributos"] and grupos:
         lineas.append(("", False))
-    for met in c["metodos"]:
-        lineas.append((f"+ {met}()", False))
+    for i, grupo in enumerate(grupos):
+        if i > 0:
+            lineas.append(("", False))
+        for met in grupo:
+            lineas.append((f"+ {met}()", False))
 
     altura = TITLE_H + PAD + max(len(lineas), 1) * LINE_H + PAD
     elementos.append(rect(x, y, width, altura))
