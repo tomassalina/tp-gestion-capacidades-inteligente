@@ -87,14 +87,13 @@ class Labor:
 
     @staticmethod
     def cargar_todas(repo, areas_por_nombre, habilidades_por_nombre):
-        labores = []
-        for fila in repo.find_all():
+        def desde_fila(fila):
             habilidades_requeridas = decodificar_lista(
                 fila["habilidades_requeridas"],
                 lambda texto: HabilidadRequerida.desde_texto(texto, habilidades_por_nombre),
             )
             credenciales_requeridas = decodificar_lista(fila["credenciales_requeridas"], lambda c: c)
-            labores.append(Labor(
+            return Labor(
                 int(fila["id"]),
                 fila["titulo"],
                 fila["descripcion"],
@@ -102,5 +101,5 @@ class Labor:
                 habilidades_requeridas,
                 credenciales_requeridas,
                 areas_por_nombre[fila["area"]],
-            ))
-        return labores
+            )
+        return list(map(desde_fila, repo.find_all()))

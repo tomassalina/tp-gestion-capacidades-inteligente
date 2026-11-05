@@ -59,10 +59,11 @@ class AreaDeTrabajo:
         )
 
     @staticmethod
+    def desde_fila(fila):
+        credenciales = decodificar_lista(fila["credenciales_obligatorias"], lambda c: c)
+        franjas = decodificar_lista(fila["franjas"], Franja.desde_texto)
+        return AreaDeTrabajo(fila["nombre"], credenciales, franjas)
+
+    @staticmethod
     def cargar_todas(repo):
-        areas = []
-        for fila in repo.find_all():
-            credenciales = decodificar_lista(fila["credenciales_obligatorias"], lambda c: c)
-            franjas = decodificar_lista(fila["franjas"], Franja.desde_texto)
-            areas.append(AreaDeTrabajo(fila["nombre"], credenciales, franjas))
-        return areas
+        return list(map(AreaDeTrabajo.desde_fila, repo.find_all()))

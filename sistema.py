@@ -178,22 +178,22 @@ class Sistema:
                     return True
         return False
 
+    def trabajador_esta_disponible(self, trabajador, labor, franja, fecha):
+        apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
+        apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
+        apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
+        if not (apto_habilidades and apto_credenciales_labor and apto_credenciales_area):
+            return False
+        if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
+            return False
+        if Asignacion.contar_ocupantes(self.asignaciones, franja, labor.get_area(), fecha) >= franja.get_capacidad():
+            return False
+        if self.tiene_asignacion_aprobada(labor, franja, fecha):
+            return False
+        return True
+
     def buscar_trabajadores_disponibles(self, labor, franja, fecha):
-        candidatos = []
-        for trabajador in self.trabajadores:
-            apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
-            apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
-            apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
-            if not (apto_habilidades and apto_credenciales_labor and apto_credenciales_area):
-                continue
-            if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
-                continue
-            if Asignacion.contar_ocupantes(self.asignaciones, franja, labor.get_area(), fecha) >= franja.get_capacidad():
-                continue
-            if self.tiene_asignacion_aprobada(labor, franja, fecha):
-                continue
-            candidatos.append(trabajador)
-        return candidatos
+        return list(filter(lambda trabajador: self.trabajador_esta_disponible(trabajador, labor, franja, fecha), self.trabajadores))
 
     def generar_sugerencias(self, fecha):
         nuevas_sugerencias = []
@@ -226,15 +226,16 @@ class Sistema:
     def recolectar_habilidades(self):
         # las Habilidad son compartidas (Trabajador y Labor apuntan a la misma por nombre),
         # asi que se juntan y deduplican por nombre antes de guardarlas una sola vez
-        habilidades_por_nombre = {}
-        for trabajador in self.trabajadores:
-            for habilidad_de_trabajador in trabajador.get_habilidades():
-                habilidad = habilidad_de_trabajador.get_habilidad()
-                habilidades_por_nombre[habilidad.get_nombre()] = habilidad
-        for labor in self.labores:
-            for habilidad_requerida in labor.get_habilidades_requeridas():
-                habilidad = habilidad_requerida.get_habilidad()
-                habilidades_por_nombre[habilidad.get_nombre()] = habilidad
+        habilidades_por_nombre = {
+            habilidad_de_trabajador.get_habilidad().get_nombre(): habilidad_de_trabajador.get_habilidad()
+            for trabajador in self.trabajadores
+            for habilidad_de_trabajador in trabajador.get_habilidades()
+        }
+        habilidades_por_nombre.update({
+            habilidad_requerida.get_habilidad().get_nombre(): habilidad_requerida.get_habilidad()
+            for labor in self.labores
+            for habilidad_requerida in labor.get_habilidades_requeridas()
+        })
         return list(habilidades_por_nombre.values())
 
     def guardar_todo(self, directorio=DIRECTORIO_DATOS_DEFAULT):
