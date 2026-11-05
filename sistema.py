@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 from datetime import date, datetime
 from asignacion import Asignacion, EstadoAsignacion, TrabajadorNoAptoError, HorasMaximasExcedidasError, FranjaSinLugarError, AsignacionDuplicadaError
 from trabajador import Trabajador
@@ -34,11 +33,6 @@ def armar_repos(directorio):
         "asignaciones": RepositorioCSV(os.path.join(directorio, "asignaciones.csv"), COLUMNAS_ASIGNACIONES),
         "cola_pendientes": RepositorioCSV(os.path.join(directorio, "cola_pendientes.csv"), COLUMNAS_COLA),
     }
-
-# Clave inmutable (namedtuple) que identifica un momento y lugar: una vez creada,
-# ninguno de sus campos puede reasignarse por error desde otra parte del codigo.
-ClaveOcupacion = namedtuple("ClaveOcupacion", ["fecha", "franja", "area"])
-
 
 class Sistema:
 
@@ -89,7 +83,8 @@ class Sistema:
         return self.asignaciones
 
     def clave_ocupacion(self, fecha, franja, area):
-        return ClaveOcupacion(fecha, franja, area)
+        # tupla comun como clave compuesta: inmutable, y alcanza para identificar el momento y lugar
+        return (fecha, franja, area)
 
     def registrar_ocupacion(self, fecha, franja, area):
         clave = self.clave_ocupacion(fecha, franja, area)
