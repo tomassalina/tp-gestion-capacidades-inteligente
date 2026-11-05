@@ -27,7 +27,7 @@ class Trabajador:
         self._habilidades = []
         self._nombres_habilidades = set()
         for habilidad_de_trabajador in habilidades:
-            self.agregar_habilidad(habilidad_de_trabajador)
+            self._registrar_habilidad(habilidad_de_trabajador)
         self._credenciales = credenciales
         self._horas_maximas_semana = horas_maximas_semana
         self._horas_asignadas = 0
@@ -49,14 +49,28 @@ class Trabajador:
         self._habilidades = []
         self._nombres_habilidades = set()
         for habilidad_de_trabajador in habilidades:
-            self.agregar_habilidad(habilidad_de_trabajador)
+            self._registrar_habilidad(habilidad_de_trabajador)
 
-    def agregar_habilidad(self, habilidad_de_trabajador):
+    def _registrar_habilidad(self, habilidad_de_trabajador):
         nombre = habilidad_de_trabajador.get_habilidad().get_nombre()
         if nombre in self._nombres_habilidades:
             return
         self._nombres_habilidades.add(nombre)
         self._habilidades.append(habilidad_de_trabajador)
+
+    def agregar_habilidad(self, habilidad_de_trabajador):
+        if not isinstance(habilidad_de_trabajador, HabilidadDeTrabajador):
+            raise TypeError("habilidad_de_trabajador debe ser una instancia de HabilidadDeTrabajador")
+        self._registrar_habilidad(habilidad_de_trabajador)
+
+    def nombres_habilidades(self):
+        return {habilidad_de_trabajador.get_habilidad().get_nombre() for habilidad_de_trabajador in self._habilidades}
+
+    def habilidades_en_comun(self, otro_trabajador):
+        return self.nombres_habilidades() & otro_trabajador.nombres_habilidades()
+
+    def habilidades_exclusivas(self, otro_trabajador):
+        return self.nombres_habilidades() - otro_trabajador.nombres_habilidades()
 
     def get_credenciales(self):
         return self._credenciales
@@ -93,6 +107,23 @@ class Trabajador:
             any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self._credenciales)
             for nombre_requerido in credenciales_requeridas
         )
+
+    def obtener_habilidades_faltantes(self, habilidades_requeridas):
+        return {
+            requerida.get_habilidad().get_nombre()
+            for requerida in habilidades_requeridas
+            if not any(
+                propia.get_habilidad() == requerida.get_habilidad() and propia.cumple_nivel_minimo(requerida.get_nivel_minimo())
+                for propia in self._habilidades
+            )
+        }
+
+    def obtener_credenciales_faltantes(self, credenciales_requeridas, fecha):
+        return {
+            nombre_requerido
+            for nombre_requerido in credenciales_requeridas
+            if not any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self._credenciales)
+        }
 
     def puede_tomar_horas(self, horas_a_sumar):
         return self._horas_asignadas + horas_a_sumar <= self._horas_maximas_semana

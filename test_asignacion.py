@@ -44,6 +44,25 @@ def test_crear_asignacion_exitosa_queda_pendiente():
     assert trabajador.get_horas_asignadas() == 4
 
 
+def test_validar_apto_informa_brecha_de_habilidades_y_credenciales_sin_repetidos():
+    habilidad = Habilidad("Coccion")
+    franja = Franja("Manana", capacidad=1)
+    area = AreaDeTrabajo("Cocina", ["Carnet Sanitario", "NDA"], [franja])
+    labor = Labor(
+        1, "Cocinar", "Cocinar el menu", 4,
+        [HabilidadRequerida(habilidad, NivelHabilidad.BASICO)],
+        ["Carnet Sanitario"],
+        area,
+    )
+    trabajador = Trabajador(1, "Ana", [], [], 20)
+
+    with pytest.raises(TrabajadorNoAptoError) as excinfo:
+        Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
+
+    assert excinfo.value.habilidades_faltantes == {"Coccion"}
+    assert excinfo.value.credenciales_faltantes == {"Carnet Sanitario", "NDA"}
+
+
 def test_validar_apto_falla_si_franja_no_tiene_lugar():
     trabajador, labor, franja = _armar_escenario()
     franja.ocupar_lugar()

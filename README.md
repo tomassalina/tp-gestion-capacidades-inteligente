@@ -68,3 +68,51 @@ Registra un nuevo miembro del personal con sus atributos opcionales.
 
 **Por qué:** El personal puede tener atributos variables según el rol: idiomas, área de origen, turnos preferidos, certificaciones iniciales. Con `**kwargs` el sistema almacena esos atributos como un diccionario interno sin necesidad de definir cada campo por separado, y el código cliente puede consultar atributo por clave.
 
+## Extensión de Consigna: Urgencias, Reversiones y Trazabilidad de Asignaciones
+
+Tras las primeras semanas de uso del prototipo, los supervisores de IIT detectaron nuevas necesidades operativas. El sistema debe incorporar los siguientes comportamientos **sin romper las reglas de negocio 1 a 12 ni las pruebas existentes**.
+
+### Nuevas Reglas de Negocio
+
+13. **Labores urgentes en espera:** Cuando se solicita cubrir una labor urgente y no existe personal disponible (según la regla 11), la labor no se descarta: queda en espera. Cada vez que se libera capacidad (por una reversión, por el inicio de una nueva semana o por el alta de personal), el sistema intenta cubrir las labores en espera **respetando estrictamente el orden en que fueron quedando pendientes**. Si la primera de ellas sigue sin poder cubrirse, conserva su lugar y no es adelantada por las siguientes. Debe poder consultarse cuántas labores esperan y cuál es la próxima a atender, sin alterar la espera. *(Estructura prevista: cola FIFO. Pendiente de implementar.)*
+
+14. **Reversión de propuestas:** Un supervisor puede revertir asignaciones que aún estén en estado 'Pendiente'. La reversión siempre actúa sobre **la propuesta más reciente** realizada en su área; si se revierte nuevamente, actúa sobre la anterior, y así sucesivamente. Revertir debe devolver al trabajador las horas descontadas y liberar el cupo en la franja correspondiente. Una asignación ya 'Aprobada' no puede revertirse: si la propuesta más reciente está aprobada, el sistema debe informarlo y no revertir ninguna otra. *(Estructura prevista: cola LIFO/pila. Pendiente de implementar.)*
+
+15. **Brecha de capacidades:** Cuando un trabajador resulta inapto para una labor (reglas 4 y 10), el sistema debe informar **exactamente qué habilidades y qué credenciales le faltan**, sin repeticiones. Además, debe permitir consultar qué habilidades tienen en común dos trabajadores y cuáles posee uno pero no el otro. Registrar dos veces la misma habilidad en un trabajador no debe alterar su repertorio. **(Implementado — ver abajo.)**
+
+16. **Ocupación por momento y lugar:** El sistema debe responder de forma inmediata, sin recorrer todas las asignaciones, cuántas personas hay asignadas para una combinación determinada de fecha, franja horaria y área de trabajo. Una vez registrada, la combinación que identifica ese momento y lugar no debe poder alterarse por error desde otra parte del código. **(Implementado — ver abajo.)**
+
+17. **Agenda personal del trabajador:** Cada trabajador mantiene su agenda de asignaciones **siempre ordenada cronológicamente** (por fecha y franja). Las asignaciones no llegan en orden: es habitual que se agregue una labor anterior a otras ya agendadas, o que se revierta una del medio de la agenda. Estas inserciones y bajas intermedias no deben requerir reordenar ni desplazar el resto de la agenda. La agenda solo se consulta recorriéndola desde la asignación más próxima hacia las posteriores. *(Estructura prevista: lista enlazada. Pendiente de implementar.)*
+
+18. **Bitácora de auditoría:** Toda propuesta, aprobación y reversión debe dejar un registro con fecha y hora, tipo de acción, labor y trabajador involucrados. Los registros de la bitácora son definitivos: una vez creados, ningún campo puede modificarse. **(Implementado — ver abajo.)**
+
+### Requisitos de la Extensión
+
+- La resolución de esta extensión debe emplear **al menos cuatro estructuras de datos de naturaleza distinta**, elegidas según el comportamiento que exige cada regla. Para las estructuras que no son nativas de Python, se usan las implementaciones desarrolladas en la cátedra.
+- Por cada regla nueva corresponde **justificar por escrito** qué estructura se eligió y por qué es más adecuada que las alternativas (considerando el orden de acceso, la unicidad, la mutabilidad y el costo de las operaciones frecuentes).
+- Actualizar el diagrama de flujo con los nuevos circuitos (espera de urgencias y reversión).
+
+### Pruebas mínimas esperadas
+
+- Tres labores urgentes sin personal; al liberarse capacidad para la segunda pero no para la primera, ninguna se cubre fuera de orden.
+- Tres propuestas seguidas y tres reversiones: se revierten en el orden inverso y las horas y cupos vuelven exactamente a su valor inicial.
+- Intento de reversión cuando la propuesta más reciente está aprobada.
+- Brecha de capacidades con faltantes de la labor y del área a la vez, sin elementos repetidos.
+- Ocupación consultada antes y después de asignar y de revertir.
+- Inserción de una asignación anterior a las ya agendadas y baja de una intermedia, verificando el orden resultante.
+- Intento de modificar un registro de la bitácora.
+
+### Qué se implementó de esta extensión (reglas 15, 16 y 18)
+
+**Regla 15 — Brecha de capacidades (`SET`):** en `Trabajador` (`trabajador.py`), el repertorio de habilidades se mantiene deduplicado mediante un `set` interno de nombres (`_nombres_habilidades`): registrar dos veces la misma habilidad no altera el repertorio (`agregar_habilidad`, y también el constructor y `set_habilidades`). `obtener_habilidades_faltantes` y `obtener_credenciales_faltantes` devuelven `set`s con lo que falta, sin repetidos. `Asignacion.validar_apto` ahora evalúa habilidades y credenciales (de la labor y del área) **juntas** y, si falla, levanta un único `TrabajadorNoAptoError` que trae la brecha completa (unión, sin duplicados) en `habilidades_faltantes` y `credenciales_faltantes`. Además, `habilidades_en_comun` y `habilidades_exclusivas` permiten comparar el repertorio de dos trabajadores usando intersección y diferencia de conjuntos.
+
+*Por qué un `set` y no una lista:* la pregunta de negocio es siempre "¿tiene esta habilidad o no?", nunca "¿en qué posición está?" — no hay orden que preservar. Un `set` resuelve la membresía y la deduplicación en O(1) amortizado, y las operaciones de brecha/comparación (unión, intersección, diferencia) son directamente las operaciones nativas del tipo, en lugar de tener que escribir bucles manuales para evitar repetidos como exigiría una lista.
+
+**Regla 16 — Ocupación por momento y lugar (`dict` + tupla inmutable como clave):** `Sistema` mantiene `_ocupacion`, un diccionario que mapea una clave `ClaveOcupacion` (un `namedtuple` con `fecha`, `franja` y `area`) a la cantidad de personas asignadas. `contar_ocupacion(fecha, franja, area)` responde en O(1) sin recorrer `_asignaciones`. El contador se incrementa en el mismo punto donde se crea cada propuesta (`_procesar_solicitudes_pendientes`, `generar_sugerencias`, `Supervisor.asignar_trabajador`) y se decrementa al revertir (`Sistema.revertir_asignacion`).
+
+*Por qué un `dict` con clave `namedtuple`:* se necesita acceso directo por clave compuesta sin recorrer nada, que es exactamente lo que ofrece un diccionario (hashing en O(1)) frente a recorrer una lista de asignaciones en O(n). Se usa un `namedtuple` en lugar de una clase propia con `setters` porque sus campos no se pueden reasignar una vez creado: así la combinación fecha+franja+área que identifica ese "momento y lugar" queda protegida de una modificación accidental desde cualquier otra parte del código, cosa que una clase mutable no garantizaría.
+
+**Regla 18 — Bitácora de auditoría (`tupla`):** `Sistema` mantiene `_bitacora`, una lista donde cada entrada es una **tupla** `(fecha_hora, tipo_accion, labor, trabajador)` creada con `registrar_en_bitacora`. Se registra una entrada en cada propuesta (creación de una `Asignacion`), cada aprobación (`Sistema.aprobar_asignacion`) y cada reversión (`Sistema.revertir_asignacion`). `obtener_bitacora()` devuelve una tupla de tuplas (no la lista interna), así que ni los registros ni la colección que se expone hacia afuera pueden alterarse. A diferencia de `_ocupacion` y `_asignaciones`, la bitácora **no se reinicia** en `ciclo_semanal`: es un historial permanente.
+
+*Por qué una tupla y no una lista o un diccionario:* cada registro es un hecho que ya ocurrió y que por consigna debe ser "definitivo". Una tupla no tiene métodos para modificar sus campos una vez creada (`registro[1] = ...` lanza `TypeError`), a diferencia de una lista, que sí permite `append`/`__setitem__`. No se eligió un diccionario porque el orden de los cuatro campos es fijo y conocido de antemano (no hace falta buscar por clave), así que una tupla es la estructura más simple y liviana que ya impone, por construcción, la inmutabilidad que pide la regla.
+
