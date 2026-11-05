@@ -30,20 +30,20 @@ class RepositorioCSV:
         if "id" not in columnas:
             raise ValueError("columnas debe incluir 'id'")
 
-        self._ruta_archivo = ruta_archivo
-        self._columnas = columnas
+        self.ruta_archivo = ruta_archivo
+        self.columnas = columnas
 
-        if not os.path.exists(self._ruta_archivo):
+        if not os.path.exists(self.ruta_archivo):
             self.escribir_filas([])
 
     def leer_filas(self):
-        with open(self._ruta_archivo, newline="", encoding="utf-8") as archivo:
+        with open(self.ruta_archivo, newline="", encoding="utf-8") as archivo:
             lector = csv.DictReader(archivo)
             return list(lector)
 
     def escribir_filas(self, filas):
-        with open(self._ruta_archivo, "w", newline="", encoding="utf-8") as archivo:
-            escritor = csv.DictWriter(archivo, fieldnames=self._columnas)
+        with open(self.ruta_archivo, "w", newline="", encoding="utf-8") as archivo:
+            escritor = csv.DictWriter(archivo, fieldnames=self.columnas)
             escritor.writeheader()
             escritor.writerows(filas)
 
@@ -56,7 +56,7 @@ class RepositorioCSV:
         if any(fila["id"] == id_nuevo for fila in filas):
             raise RegistroDuplicadoError(f"Ya existe un registro con id '{id_nuevo}'")
 
-        fila_nueva = {columna: str(datos.get(columna, "")) for columna in self._columnas}
+        fila_nueva = {columna: str(datos.get(columna, "")) for columna in self.columnas}
         filas.append(fila_nueva)
         self.escribir_filas(filas)
         return fila_nueva

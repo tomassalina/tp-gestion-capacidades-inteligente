@@ -49,67 +49,67 @@ class Sistema:
             raise TypeError("areas debe ser una lista de AreaDeTrabajo")
         if labores is not None and (not isinstance(labores, list) or not all(map(lambda l: isinstance(l, Labor), labores))):
             raise TypeError("labores debe ser una lista de Labor")
-        self._trabajadores = trabajadores or []
-        self._areas = areas or []
-        self._labores = labores or []
-        self._solicitudes_pendientes, self._asignaciones = Cola(), []
-        self._trabajadores_por_id = {}
-        self._ocupacion = {}
-        self._bitacora = []
+        self.trabajadores = trabajadores or []
+        self.areas = areas or []
+        self.labores = labores or []
+        self.solicitudes_pendientes, self.asignaciones = Cola(), []
+        self.trabajadores_por_id = {}
+        self.ocupacion = {}
+        self.bitacora = []
         self.reindexar_trabajadores()
 
     def get_trabajadores(self):
-        return self._trabajadores
+        return self.trabajadores
 
     def reindexar_trabajadores(self):
-        self._trabajadores_por_id = {}
-        for trabajador in self._trabajadores:
-            self._trabajadores_por_id[trabajador.get_id()] = trabajador
+        self.trabajadores_por_id = {}
+        for trabajador in self.trabajadores:
+            self.trabajadores_por_id[trabajador.get_id()] = trabajador
 
     def buscar_trabajador_por_id(self, id):
-        return self._trabajadores_por_id.get(id)
+        return self.trabajadores_por_id.get(id)
 
     def set_trabajadores(self, trabajadores):
-        self._trabajadores = trabajadores
+        self.trabajadores = trabajadores
         self.reindexar_trabajadores()
 
     def get_areas(self):
-        return self._areas
+        return self.areas
 
     def set_areas(self, areas):
-        self._areas = areas
+        self.areas = areas
 
     def get_labores(self):
-        return self._labores
+        return self.labores
 
     def set_labores(self, labores):
-        self._labores = labores
+        self.labores = labores
 
     def obtener_asignaciones(self):
-        return self._asignaciones
+        return self.asignaciones
 
     def clave_ocupacion(self, fecha, franja, area):
         return ClaveOcupacion(fecha, franja, area)
 
     def registrar_ocupacion(self, fecha, franja, area):
         clave = self.clave_ocupacion(fecha, franja, area)
-        self._ocupacion[clave] = self._ocupacion.get(clave, 0) + 1
+        self.ocupacion[clave] = self.ocupacion.get(clave, 0) + 1
 
     def liberar_ocupacion(self, fecha, franja, area):
         clave = self.clave_ocupacion(fecha, franja, area)
-        if clave in self._ocupacion:
-            self._ocupacion[clave] = max(0, self._ocupacion[clave] - 1)
+        if clave in self.ocupacion:
+            self.ocupacion[clave] = max(0, self.ocupacion[clave] - 1)
 
     def contar_ocupacion(self, fecha, franja, area):
-        return self._ocupacion.get(self.clave_ocupacion(fecha, franja, area), 0)
+        return self.ocupacion.get(self.clave_ocupacion(fecha, franja, area), 0)
 
     def registrar_en_bitacora(self, tipo_accion, labor, trabajador):
         registro = (datetime.now(), tipo_accion, labor, trabajador)
-        self._bitacora.append(registro)
+        self.bitacora.append(registro)
         return registro
 
     def obtener_bitacora(self):
-        return tuple(self._bitacora)
+        return tuple(self.bitacora)
 
     def aprobar_asignacion(self, asignacion):
         asignacion.aprobar()
@@ -117,13 +117,13 @@ class Sistema:
 
     def revertir_asignacion(self, asignacion):
         asignacion.rechazar()
-        if asignacion in self._asignaciones:
-            self._asignaciones.remove(asignacion)
+        if asignacion in self.asignaciones:
+            self.asignaciones.remove(asignacion)
         self.liberar_ocupacion(asignacion.get_fecha(), asignacion.get_franja(), asignacion.get_labor().get_area())
         self.registrar_en_bitacora(TipoAccionBitacora.REVERSION, asignacion.get_labor(), asignacion.get_trabajador())
 
     def get_solicitudes_pendientes(self):
-        return self._solicitudes_pendientes
+        return self.solicitudes_pendientes
 
     def solicitar_asignacion(self, trabajador, labor, franja, fecha):
         if trabajador not in self.buscar_trabajadores_disponibles(labor, franja, fecha):
@@ -134,10 +134,10 @@ class Sistema:
             raise AsignacionDuplicadaError(
                 f"{trabajador.get_nombre()} ya tiene una solicitud pendiente para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}' el {fecha}"
             )
-        self._solicitudes_pendientes.encolar((trabajador, labor, franja, fecha))
+        self.solicitudes_pendientes.encolar((trabajador, labor, franja, fecha))
 
     def ya_esta_en_la_cola(self, trabajador, labor, franja, fecha):
-        for solicitud in self._solicitudes_pendientes.recorrer():
+        for solicitud in self.solicitudes_pendientes.recorrer():
             trabajador_en_cola, labor_en_cola, franja_en_cola, fecha_en_cola = solicitud
             if trabajador_en_cola == trabajador and labor_en_cola == labor and franja_en_cola == franja and fecha_en_cola == fecha:
                 return True
@@ -152,8 +152,8 @@ class Sistema:
             horas_maximas_semana=horas_max,
             **atributos,
         )
-        self._trabajadores.append(nuevo_trabajador)
-        self._trabajadores_por_id[nuevo_trabajador.get_id()] = nuevo_trabajador
+        self.trabajadores.append(nuevo_trabajador)
+        self.trabajadores_por_id[nuevo_trabajador.get_id()] = nuevo_trabajador
         return nuevo_trabajador
 
     def ejecutar_acciones_semanales(self):
@@ -161,23 +161,23 @@ class Sistema:
         self.reiniciar_horas_trabajadores()
 
     def procesar_solicitudes_pendientes(self):
-        while not self._solicitudes_pendientes.esta_vacia():
-            trabajador, labor, franja, fecha = self._solicitudes_pendientes.desencolar()
+        while not self.solicitudes_pendientes.esta_vacia():
+            trabajador, labor, franja, fecha = self.solicitudes_pendientes.desencolar()
             try:
-                nueva_asignacion = Asignacion(trabajador, labor, franja, fecha, self._asignaciones)
+                nueva_asignacion = Asignacion(trabajador, labor, franja, fecha, self.asignaciones)
             except ERRORES_ASIGNACION as e:
                 print(f"No se pudo procesar la solicitud de {trabajador.get_nombre()} para '{labor.get_titulo()}': {e}")
             else:
-                self._asignaciones.append(nueva_asignacion)
+                self.asignaciones.append(nueva_asignacion)
                 self.registrar_ocupacion(fecha, franja, labor.get_area())
                 self.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, trabajador)
 
     def reiniciar_horas_trabajadores(self):
-        for trabajador in self._trabajadores:
+        for trabajador in self.trabajadores:
             trabajador.reiniciar_horas()
 
     def tiene_asignacion_aprobada(self, labor, franja, fecha):
-        for asignacion in self._asignaciones:
+        for asignacion in self.asignaciones:
             if asignacion.get_labor() == labor and asignacion.get_franja() == franja and asignacion.get_fecha() == fecha:
                 if asignacion.get_estado() == EstadoAsignacion.APROBADA:
                     return True
@@ -185,7 +185,7 @@ class Sistema:
 
     def buscar_trabajadores_disponibles(self, labor, franja, fecha):
         candidatos = []
-        for trabajador in self._trabajadores:
+        for trabajador in self.trabajadores:
             apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
             apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
             apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
@@ -202,7 +202,7 @@ class Sistema:
 
     def generar_sugerencias(self, fecha):
         nuevas_sugerencias = []
-        for labor in self._labores:
+        for labor in self.labores:
             for franja in labor.get_area().get_franjas():
                 if self.tiene_asignacion_aprobada(labor, franja, fecha):
                     continue
@@ -211,19 +211,19 @@ class Sistema:
                     continue
                 candidato = candidatos[0]
                 try:
-                    sugerencia = Asignacion(candidato, labor, franja, fecha, self._asignaciones, estado=EstadoAsignacion.AUTOMATICA)
+                    sugerencia = Asignacion(candidato, labor, franja, fecha, self.asignaciones, estado=EstadoAsignacion.AUTOMATICA)
                 except ERRORES_ASIGNACION as e:
                     print(f"No se pudo generar sugerencia para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}': {e}")
                 else:
-                    self._asignaciones.append(sugerencia)
+                    self.asignaciones.append(sugerencia)
                     self.registrar_ocupacion(fecha, franja, labor.get_area())
                     self.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, candidato)
                     nuevas_sugerencias.append(sugerencia)
         return nuevas_sugerencias
 
     def ciclo_semanal(self, fecha):
-        self._asignaciones = []
-        self._ocupacion = {}
+        self.asignaciones = []
+        self.ocupacion = {}
         self.reiniciar_horas_trabajadores()
         self.procesar_solicitudes_pendientes()
         return self.generar_sugerencias(fecha)
@@ -232,11 +232,11 @@ class Sistema:
         # las Habilidad son compartidas (Trabajador y Labor apuntan a la misma por nombre),
         # asi que se juntan y deduplican por nombre antes de guardarlas una sola vez
         habilidades_por_nombre = {}
-        for trabajador in self._trabajadores:
+        for trabajador in self.trabajadores:
             for habilidad_de_trabajador in trabajador.get_habilidades():
                 habilidad = habilidad_de_trabajador.get_habilidad()
                 habilidades_por_nombre[habilidad.get_nombre()] = habilidad
-        for labor in self._labores:
+        for labor in self.labores:
             for habilidad_requerida in labor.get_habilidades_requeridas():
                 habilidad = habilidad_requerida.get_habilidad()
                 habilidades_por_nombre[habilidad.get_nombre()] = habilidad
@@ -248,22 +248,22 @@ class Sistema:
         for habilidad in self.recolectar_habilidades():
             habilidad.guardar(repos["habilidades"])
 
-        for area in self._areas:
+        for area in self.areas:
             area.guardar(repos["areas"])
 
-        for labor in self._labores:
+        for labor in self.labores:
             labor.guardar(repos["labores"])
 
-        for trabajador in self._trabajadores:
+        for trabajador in self.trabajadores:
             if isinstance(trabajador, Supervisor):
                 trabajador.guardar(repos["supervisores"])
             else:
                 trabajador.guardar(repos["trabajadores"])
 
-        for asignacion in self._asignaciones:
+        for asignacion in self.asignaciones:
             asignacion.guardar(repos["asignaciones"])
 
-        for trabajador, labor, franja, fecha in self._solicitudes_pendientes.recorrer():
+        for trabajador, labor, franja, fecha in self.solicitudes_pendientes.recorrer():
             repos["cola_pendientes"].create(
                 id=f"{trabajador.get_id()}|{labor.get_id()}|{franja.get_nombre()}|{fecha.isoformat()}",
                 trabajador_id=trabajador.get_id(),

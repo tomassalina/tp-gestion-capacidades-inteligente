@@ -15,33 +15,33 @@ class CredencialProfesional:
         if fecha_caducidad <= fecha_obtencion:
             raise ValueError("La fecha de caducidad debe ser posterior a la fecha de obtencion")
 
-        self._nombre = nombre
-        self._fecha_obtencion = fecha_obtencion
-        self._fecha_caducidad = fecha_caducidad
+        self.nombre = nombre
+        self.fecha_obtencion = fecha_obtencion
+        self.fecha_caducidad = fecha_caducidad
 
     def get_nombre(self):
-        return self._nombre
+        return self.nombre
 
     def set_nombre(self, nombre):
-        self._nombre = nombre
+        self.nombre = nombre
 
     def get_fecha_obtencion(self):
-        return self._fecha_obtencion
+        return self.fecha_obtencion
 
     def set_fecha_obtencion(self, fecha_obtencion):
-        self._fecha_obtencion = fecha_obtencion
+        self.fecha_obtencion = fecha_obtencion
 
     def get_fecha_caducidad(self):
-        return self._fecha_caducidad
+        return self.fecha_caducidad
 
     def set_fecha_caducidad(self, fecha_caducidad):
-        self._fecha_caducidad = fecha_caducidad
+        self.fecha_caducidad = fecha_caducidad
 
     def esta_activa(self, fecha_referencia):
-        return self._fecha_obtencion <= fecha_referencia <= self._fecha_caducidad
+        return self.fecha_obtencion <= fecha_referencia <= self.fecha_caducidad
 
     def a_texto(self):
-        return f"{self._nombre}|{self._fecha_obtencion.isoformat()}|{self._fecha_caducidad.isoformat()}"
+        return f"{self.nombre}|{self.fecha_obtencion.isoformat()}|{self.fecha_caducidad.isoformat()}"
 
     @staticmethod
     def desde_texto(texto):

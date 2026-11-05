@@ -245,10 +245,10 @@ with tab_personal:
 
             id_sel = st.selectbox(
                 "Trabajador", [t.get_id() for t in sistema.get_trabajadores()],
-                format_func=lambda tid: next(t.get_nombre() for t in sistema.get_trabajadores() if t.get_id() == tid),
+                format_func=lambda tid: sistema.buscar_trabajador_por_id(tid).get_nombre(),
                 key="gestion_trabajador",
             )
-            trabajador_sel = next(t for t in sistema.get_trabajadores() if t.get_id() == id_sel)
+            trabajador_sel = sistema.buscar_trabajador_por_id(id_sel)
 
             st.markdown("**Habilidades actuales**")
             if trabajador_sel.get_habilidades():
@@ -456,10 +456,10 @@ with tab_asignaciones:
         if trabajadores and labores:
             id_trabajador_sel = st.selectbox(
                 "Trabajador", [t.get_id() for t in trabajadores],
-                format_func=lambda tid: next(t.get_nombre() for t in trabajadores if t.get_id() == tid),
+                format_func=lambda tid: sistema.buscar_trabajador_por_id(tid).get_nombre(),
                 key="sol_trabajador",
             )
-            t_sel = next(t for t in trabajadores if t.get_id() == id_trabajador_sel)
+            t_sel = sistema.buscar_trabajador_por_id(id_trabajador_sel)
             id_labor_sel = st.selectbox(
                 "Labor", [l.get_id() for l in labores],
                 format_func=lambda lid: next(l.get_titulo() for l in labores if l.get_id() == lid),

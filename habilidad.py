@@ -16,22 +16,22 @@ class Habilidad:
         if nombre.strip() == "":
             raise ValueError("nombre no puede estar vacio")
 
-        self._nombre = nombre
+        self.nombre = nombre
 
     def get_nombre(self):
-        return self._nombre
+        return self.nombre
 
     def set_nombre(self, nombre):
-        self._nombre = nombre
+        self.nombre = nombre
 
     def __eq__(self, other):
-        return isinstance(other, Habilidad) and self._nombre == other.get_nombre()
+        return isinstance(other, Habilidad) and self.nombre == other.get_nombre()
 
     def __hash__(self):
-        return hash(self._nombre)
+        return hash(self.nombre)
 
     def guardar(self, repo):
-        repo.create(id=self._nombre, nombre=self._nombre)
+        repo.create(id=self.nombre, nombre=self.nombre)
 
     @staticmethod
     def cargar_todas(repo):
@@ -46,26 +46,26 @@ class HabilidadDeTrabajador:
         if nivel not in NIVELES_HABILIDAD:
             raise ValueError("nivel debe ser uno de los valores definidos en NivelHabilidad")
 
-        self._habilidad = habilidad
-        self._nivel = nivel
+        self.habilidad = habilidad
+        self.nivel = nivel
 
     def get_habilidad(self):
-        return self._habilidad
+        return self.habilidad
 
     def set_habilidad(self, habilidad):
-        self._habilidad = habilidad
+        self.habilidad = habilidad
 
     def get_nivel(self):
-        return self._nivel
+        return self.nivel
 
     def set_nivel(self, nivel):
-        self._nivel = nivel
+        self.nivel = nivel
 
     def cumple_nivel_minimo(self, nivel_minimo):
-        return self._nivel >= nivel_minimo
+        return self.nivel >= nivel_minimo
 
     def a_texto(self):
-        return f"{self._habilidad.get_nombre()}:{self._nivel}"
+        return f"{self.habilidad.get_nombre()}:{self.nivel}"
 
     @staticmethod
     def desde_texto(texto, habilidades_por_nombre):
@@ -81,23 +81,23 @@ class HabilidadRequerida:
         if nivel_minimo not in NIVELES_HABILIDAD:
             raise ValueError("nivel_minimo debe ser uno de los valores definidos en NivelHabilidad")
 
-        self._habilidad = habilidad
-        self._nivel_minimo = nivel_minimo
+        self.habilidad = habilidad
+        self.nivel_minimo = nivel_minimo
 
     def get_habilidad(self):
-        return self._habilidad
+        return self.habilidad
 
     def set_habilidad(self, habilidad):
-        self._habilidad = habilidad
+        self.habilidad = habilidad
 
     def get_nivel_minimo(self):
-        return self._nivel_minimo
+        return self.nivel_minimo
 
     def set_nivel_minimo(self, nivel_minimo):
-        self._nivel_minimo = nivel_minimo
+        self.nivel_minimo = nivel_minimo
 
     def a_texto(self):
-        return f"{self._habilidad.get_nombre()}:{self._nivel_minimo}"
+        return f"{self.habilidad.get_nombre()}:{self.nivel_minimo}"
 
     @staticmethod
     def desde_texto(texto, habilidades_por_nombre):

@@ -14,48 +14,48 @@ class AreaDeTrabajo:
         if not isinstance(franjas, list) or not all(map(lambda f: isinstance(f, Franja), franjas)):
             raise TypeError("franjas debe ser una lista de Franja")
 
-        self._nombre = nombre
-        self._credenciales_obligatorias = credenciales_obligatorias
-        self._franjas = franjas
-        self._franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
+        self.nombre = nombre
+        self.credenciales_obligatorias = credenciales_obligatorias
+        self.franjas = franjas
+        self.franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
 
     def get_nombre(self):
-        return self._nombre
+        return self.nombre
 
     def set_nombre(self, nombre):
-        self._nombre = nombre
+        self.nombre = nombre
 
     def get_credenciales_obligatorias(self):
-        return self._credenciales_obligatorias
+        return self.credenciales_obligatorias
 
     def set_credenciales_obligatorias(self, credenciales_obligatorias):
-        self._credenciales_obligatorias = credenciales_obligatorias
+        self.credenciales_obligatorias = credenciales_obligatorias
 
     def agregar_credencial_obligatoria(self, credencial):
-        self._credenciales_obligatorias.append(credencial)
+        self.credenciales_obligatorias.append(credencial)
 
     def get_franjas(self):
-        return self._franjas
+        return self.franjas
 
     def set_franjas(self, franjas):
-        self._franjas = franjas
-        self._franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
+        self.franjas = franjas
+        self.franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
 
     def agregar_franja(self, franja):
         if not isinstance(franja, Franja):
             raise TypeError("franja debe ser una instancia de Franja")
-        self._franjas.append(franja)
-        self._franjas_por_nombre[franja.get_nombre()] = franja
+        self.franjas.append(franja)
+        self.franjas_por_nombre[franja.get_nombre()] = franja
 
     def buscar_franja(self, nombre_franja):
-        return self._franjas_por_nombre.get(nombre_franja)
+        return self.franjas_por_nombre.get(nombre_franja)
 
     def guardar(self, repo):
         repo.create(
-            id=self._nombre,
-            nombre=self._nombre,
-            credenciales_obligatorias=codificar_lista(self._credenciales_obligatorias, lambda c: c),
-            franjas=codificar_lista(self._franjas, lambda f: f.a_texto()),
+            id=self.nombre,
+            nombre=self.nombre,
+            credenciales_obligatorias=codificar_lista(self.credenciales_obligatorias, lambda c: c),
+            franjas=codificar_lista(self.franjas, lambda f: f.a_texto()),
         )
 
     @staticmethod

@@ -20,38 +20,38 @@ class Franja:
         if capacidad <= 0:
             raise ValueError("capacidad debe ser mayor a 0")
 
-        self._nombre = nombre
-        self._capacidad = capacidad
-        self._trabajadores_asignados = 0
+        self.nombre = nombre
+        self.capacidad = capacidad
+        self.trabajadores_asignados = 0
 
     def get_nombre(self):
-        return self._nombre
+        return self.nombre
 
     def set_nombre(self, nombre):
-        self._nombre = nombre
+        self.nombre = nombre
 
     def get_capacidad(self):
-        return self._capacidad
+        return self.capacidad
 
     def set_capacidad(self, capacidad):
-        self._capacidad = capacidad
+        self.capacidad = capacidad
 
     def get_trabajadores_asignados(self):
-        return self._trabajadores_asignados
+        return self.trabajadores_asignados
 
     def tiene_lugar(self):
-        return self._trabajadores_asignados < self._capacidad
+        return self.trabajadores_asignados < self.capacidad
 
     def ocupar_lugar(self):
-        self._trabajadores_asignados += 1
+        self.trabajadores_asignados += 1
 
     def liberar_lugar(self):
-        if self._trabajadores_asignados > 0:
-            self._trabajadores_asignados -= 1
+        if self.trabajadores_asignados > 0:
+            self.trabajadores_asignados -= 1
 
     def a_texto(self):
         # no se persiste la ocupacion: se reconstruye sola cuando se recargan las asignaciones
-        return f"{self._nombre}:{self._capacidad}"
+        return f"{self.nombre}:{self.capacidad}"
 
     @staticmethod
     def desde_texto(texto):

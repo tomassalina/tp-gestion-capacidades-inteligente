@@ -27,62 +27,62 @@ class Labor:
         if not isinstance(area, AreaDeTrabajo):
             raise TypeError("area debe ser una instancia de AreaDeTrabajo")
 
-        self._id = id
-        self._titulo = titulo
-        self._descripcion = descripcion
-        self._duracion_horas = duracion_horas
-        self._habilidades_requeridas = habilidades_requeridas
-        self._credenciales_requeridas = credenciales_requeridas
-        self._area = area
+        self.id = id
+        self.titulo = titulo
+        self.descripcion = descripcion
+        self.duracion_horas = duracion_horas
+        self.habilidades_requeridas = habilidades_requeridas
+        self.credenciales_requeridas = credenciales_requeridas
+        self.area = area
 
     def get_id(self):
-        return self._id
+        return self.id
 
     def get_titulo(self):
-        return self._titulo
+        return self.titulo
 
     def set_titulo(self, titulo):
-        self._titulo = titulo
+        self.titulo = titulo
 
     def get_descripcion(self):
-        return self._descripcion
+        return self.descripcion
 
     def set_descripcion(self, descripcion):
-        self._descripcion = descripcion
+        self.descripcion = descripcion
 
     def get_duracion_horas(self):
-        return self._duracion_horas
+        return self.duracion_horas
 
     def set_duracion_horas(self, duracion_horas):
-        self._duracion_horas = duracion_horas
+        self.duracion_horas = duracion_horas
 
     def get_habilidades_requeridas(self):
-        return self._habilidades_requeridas
+        return self.habilidades_requeridas
 
     def set_habilidades_requeridas(self, habilidades_requeridas):
-        self._habilidades_requeridas = habilidades_requeridas
+        self.habilidades_requeridas = habilidades_requeridas
 
     def get_credenciales_requeridas(self):
-        return self._credenciales_requeridas
+        return self.credenciales_requeridas
 
     def set_credenciales_requeridas(self, credenciales_requeridas):
-        self._credenciales_requeridas = credenciales_requeridas
+        self.credenciales_requeridas = credenciales_requeridas
 
     def get_area(self):
-        return self._area
+        return self.area
 
     def set_area(self, area):
-        self._area = area
+        self.area = area
 
     def guardar(self, repo):
         repo.create(
-            id=self._id,
-            titulo=self._titulo,
-            descripcion=self._descripcion,
-            duracion_horas=self._duracion_horas,
-            habilidades_requeridas=codificar_lista(self._habilidades_requeridas, lambda h: h.a_texto()),
-            credenciales_requeridas=codificar_lista(self._credenciales_requeridas, lambda c: c),
-            area=self._area.get_nombre(),
+            id=self.id,
+            titulo=self.titulo,
+            descripcion=self.descripcion,
+            duracion_horas=self.duracion_horas,
+            habilidades_requeridas=codificar_lista(self.habilidades_requeridas, lambda h: h.a_texto()),
+            credenciales_requeridas=codificar_lista(self.credenciales_requeridas, lambda c: c),
+            area=self.area.get_nombre(),
         )
 
     @staticmethod

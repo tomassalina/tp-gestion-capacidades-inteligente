@@ -50,49 +50,49 @@ class Asignacion:
         trabajador.sumar_horas(labor.get_duracion_horas())
         franja.ocupar_lugar()
 
-        self._trabajador = trabajador
-        self._labor = labor
-        self._franja = franja
-        self._fecha = fecha
-        self._estado = estado if estado is not None else EstadoAsignacion.PENDIENTE
+        self.trabajador = trabajador
+        self.labor = labor
+        self.franja = franja
+        self.fecha = fecha
+        self.estado = estado if estado is not None else EstadoAsignacion.PENDIENTE
         print(
             f"Labor '{labor.get_titulo()}' asignada a {trabajador.get_nombre()} "
-            f"en la franja '{franja.get_nombre()}' (estado: {self._estado})"
+            f"en la franja '{franja.get_nombre()}' (estado: {self.estado})"
         )
 
     def get_trabajador(self):
-        return self._trabajador
+        return self.trabajador
 
     def get_labor(self):
-        return self._labor
+        return self.labor
 
     def get_franja(self):
-        return self._franja
+        return self.franja
 
     def get_fecha(self):
-        return self._fecha
+        return self.fecha
 
     def get_estado(self):
-        return self._estado
+        return self.estado
 
     def set_estado(self, estado):
-        self._estado = estado
+        self.estado = estado
 
     def reasignar(self, nuevo_trabajador):
-        if self._estado == EstadoAsignacion.APROBADA:
+        if self.estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede reasignar una asignacion ya Aprobada")
 
-        Asignacion.evaluar_aptitud(nuevo_trabajador, self._labor, self._fecha)
+        Asignacion.evaluar_aptitud(nuevo_trabajador, self.labor, self.fecha)
 
-        self._trabajador.restar_horas(self._labor.get_duracion_horas())
-        nuevo_trabajador.sumar_horas(self._labor.get_duracion_horas())
-        self._trabajador = nuevo_trabajador
+        self.trabajador.restar_horas(self.labor.get_duracion_horas())
+        nuevo_trabajador.sumar_horas(self.labor.get_duracion_horas())
+        self.trabajador = nuevo_trabajador
 
     def rechazar(self):
-        if self._estado == EstadoAsignacion.APROBADA:
+        if self.estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede rechazar una asignacion ya Aprobada")
-        self._trabajador.restar_horas(self._labor.get_duracion_horas())
-        self._franja.liberar_lugar()
+        self.trabajador.restar_horas(self.labor.get_duracion_horas())
+        self.franja.liberar_lugar()
 
     @staticmethod
     def evaluar_aptitud(trabajador, labor, fecha):
@@ -145,12 +145,12 @@ class Asignacion:
 
     def guardar(self, repo):
         repo.create(
-            id=f"{self._trabajador.get_id()}|{self._labor.get_id()}|{self._franja.get_nombre()}|{self._fecha.isoformat()}",
-            trabajador_id=self._trabajador.get_id(),
-            labor_id=self._labor.get_id(),
-            franja=self._franja.get_nombre(),
-            fecha=self._fecha.isoformat(),
-            estado=self._estado,
+            id=f"{self.trabajador.get_id()}|{self.labor.get_id()}|{self.franja.get_nombre()}|{self.fecha.isoformat()}",
+            trabajador_id=self.trabajador.get_id(),
+            labor_id=self.labor.get_id(),
+            franja=self.franja.get_nombre(),
+            fecha=self.fecha.isoformat(),
+            estado=self.estado,
         )
 
     @staticmethod

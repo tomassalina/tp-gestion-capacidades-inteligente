@@ -22,32 +22,32 @@ class Trabajador:
         if horas_maximas_semana <= 0:
             raise ValueError("Las horas maximas por semana deben ser mayores a 0")
 
-        self._id = id
-        self._nombre = nombre
-        self._habilidades = []
-        self._nombres_habilidades = set()
+        self.id = id
+        self.nombre = nombre
+        self.habilidades = []
+        self.repertorio_habilidades = set()
         for habilidad_de_trabajador in habilidades:
             self.agregar_habilidad(habilidad_de_trabajador)
-        self._credenciales = credenciales
-        self._horas_maximas_semana = horas_maximas_semana
-        self._horas_asignadas = 0
-        self._atributos = atributos
+        self.credenciales = credenciales
+        self.horas_maximas_semana = horas_maximas_semana
+        self.horas_asignadas = 0
+        self.atributos = atributos
 
     def get_id(self):
-        return self._id
+        return self.id
 
     def get_nombre(self):
-        return self._nombre
+        return self.nombre
 
     def set_nombre(self, nombre):
-        self._nombre = nombre
+        self.nombre = nombre
 
     def get_habilidades(self):
-        return self._habilidades
+        return self.habilidades
 
     def set_habilidades(self, habilidades):
-        self._habilidades = []
-        self._nombres_habilidades = set()
+        self.habilidades = []
+        self.repertorio_habilidades = set()
         for habilidad_de_trabajador in habilidades:
             self.agregar_habilidad(habilidad_de_trabajador)
 
@@ -55,13 +55,13 @@ class Trabajador:
         if not isinstance(habilidad_de_trabajador, HabilidadDeTrabajador):
             raise TypeError("habilidad_de_trabajador debe ser una instancia de HabilidadDeTrabajador")
         nombre = habilidad_de_trabajador.get_habilidad().get_nombre()
-        if nombre in self._nombres_habilidades:
+        if nombre in self.repertorio_habilidades:
             return
-        self._nombres_habilidades.add(nombre)
-        self._habilidades.append(habilidad_de_trabajador)
+        self.repertorio_habilidades.add(nombre)
+        self.habilidades.append(habilidad_de_trabajador)
 
     def nombres_habilidades(self):
-        return {habilidad_de_trabajador.get_habilidad().get_nombre() for habilidad_de_trabajador in self._habilidades}
+        return {habilidad_de_trabajador.get_habilidad().get_nombre() for habilidad_de_trabajador in self.habilidades}
 
     def habilidades_en_comun(self, otro_trabajador):
         return self.nombres_habilidades() & otro_trabajador.nombres_habilidades()
@@ -70,38 +70,38 @@ class Trabajador:
         return self.nombres_habilidades() - otro_trabajador.nombres_habilidades()
 
     def get_credenciales(self):
-        return self._credenciales
+        return self.credenciales
 
     def set_credenciales(self, credenciales):
-        self._credenciales = credenciales
+        self.credenciales = credenciales
 
     def get_horas_maximas_semana(self):
-        return self._horas_maximas_semana
+        return self.horas_maximas_semana
 
     def set_horas_maximas_semana(self, horas_maximas_semana):
-        self._horas_maximas_semana = horas_maximas_semana
+        self.horas_maximas_semana = horas_maximas_semana
 
     def get_horas_asignadas(self):
-        return self._horas_asignadas
+        return self.horas_asignadas
 
     def get_atributos(self):
-        return self._atributos
+        return self.atributos
 
     def get_atributo(self, clave, valor_por_defecto=None):
-        return self._atributos.get(clave, valor_por_defecto)
+        return self.atributos.get(clave, valor_por_defecto)
 
     def tiene_habilidades(self, habilidades_requeridas):
         return all(
             any(
                 propia.get_habilidad() == requerida.get_habilidad() and propia.cumple_nivel_minimo(requerida.get_nivel_minimo())
-                for propia in self._habilidades
+                for propia in self.habilidades
             )
             for requerida in habilidades_requeridas
         )
 
     def tiene_credenciales_activas(self, credenciales_requeridas, fecha):
         return all(
-            any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self._credenciales)
+            any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self.credenciales)
             for nombre_requerido in credenciales_requeridas
         )
 
@@ -111,7 +111,7 @@ class Trabajador:
             for requerida in habilidades_requeridas
             if not any(
                 propia.get_habilidad() == requerida.get_habilidad() and propia.cumple_nivel_minimo(requerida.get_nivel_minimo())
-                for propia in self._habilidades
+                for propia in self.habilidades
             )
         }
 
@@ -119,26 +119,26 @@ class Trabajador:
         return {
             nombre_requerido
             for nombre_requerido in credenciales_requeridas
-            if not any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self._credenciales)
+            if not any(credencial.get_nombre() == nombre_requerido and credencial.esta_activa(fecha) for credencial in self.credenciales)
         }
 
     def puede_tomar_horas(self, horas_a_sumar):
-        return self._horas_asignadas + horas_a_sumar <= self._horas_maximas_semana
+        return self.horas_asignadas + horas_a_sumar <= self.horas_maximas_semana
 
     def sumar_horas(self, horas):
-        self._horas_asignadas += horas
+        self.horas_asignadas += horas
 
     def restar_horas(self, horas):
-        self._horas_asignadas = max(0, self._horas_asignadas - horas)
+        self.horas_asignadas = max(0, self.horas_asignadas - horas)
 
     def reiniciar_horas(self):
-        self._horas_asignadas = 0
+        self.horas_asignadas = 0
 
     def solicitar_asignacion(self, sistema, labor, franja, fecha):
         sistema.solicitar_asignacion(self, labor, franja, fecha)
 
     def atributos_a_texto(self):
-        return ";".join(f"{clave}={valor}" for clave, valor in self._atributos.items())
+        return ";".join(f"{clave}={valor}" for clave, valor in self.atributos.items())
 
     @staticmethod
     def atributos_desde_texto(texto):
@@ -151,11 +151,11 @@ class Trabajador:
 
     def guardar(self, repo):
         repo.create(
-            id=self._id,
-            nombre=self._nombre,
-            habilidades=codificar_lista(self._habilidades, lambda h: h.a_texto()),
-            credenciales=codificar_lista(self._credenciales, lambda c: c.a_texto()),
-            horas_maximas_semana=self._horas_maximas_semana,
+            id=self.id,
+            nombre=self.nombre,
+            habilidades=codificar_lista(self.habilidades, lambda h: h.a_texto()),
+            credenciales=codificar_lista(self.credenciales, lambda c: c.a_texto()),
+            horas_maximas_semana=self.horas_maximas_semana,
             atributos=self.atributos_a_texto(),
         )
 
