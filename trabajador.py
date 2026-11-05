@@ -27,7 +27,7 @@ class Trabajador:
         self._habilidades = []
         self._nombres_habilidades = set()
         for habilidad_de_trabajador in habilidades:
-            self._registrar_habilidad(habilidad_de_trabajador)
+            self.agregar_habilidad(habilidad_de_trabajador)
         self._credenciales = credenciales
         self._horas_maximas_semana = horas_maximas_semana
         self._horas_asignadas = 0
@@ -49,19 +49,16 @@ class Trabajador:
         self._habilidades = []
         self._nombres_habilidades = set()
         for habilidad_de_trabajador in habilidades:
-            self._registrar_habilidad(habilidad_de_trabajador)
+            self.agregar_habilidad(habilidad_de_trabajador)
 
-    def _registrar_habilidad(self, habilidad_de_trabajador):
+    def agregar_habilidad(self, habilidad_de_trabajador):
+        if not isinstance(habilidad_de_trabajador, HabilidadDeTrabajador):
+            raise TypeError("habilidad_de_trabajador debe ser una instancia de HabilidadDeTrabajador")
         nombre = habilidad_de_trabajador.get_habilidad().get_nombre()
         if nombre in self._nombres_habilidades:
             return
         self._nombres_habilidades.add(nombre)
         self._habilidades.append(habilidad_de_trabajador)
-
-    def agregar_habilidad(self, habilidad_de_trabajador):
-        if not isinstance(habilidad_de_trabajador, HabilidadDeTrabajador):
-            raise TypeError("habilidad_de_trabajador debe ser una instancia de HabilidadDeTrabajador")
-        self._registrar_habilidad(habilidad_de_trabajador)
 
     def nombres_habilidades(self):
         return {habilidad_de_trabajador.get_habilidad().get_nombre() for habilidad_de_trabajador in self._habilidades}
@@ -140,11 +137,11 @@ class Trabajador:
     def solicitar_asignacion(self, sistema, labor, franja, fecha):
         sistema.solicitar_asignacion(self, labor, franja, fecha)
 
-    def _atributos_a_texto(self):
+    def atributos_a_texto(self):
         return ";".join(f"{clave}={valor}" for clave, valor in self._atributos.items())
 
     @staticmethod
-    def _atributos_desde_texto(texto):
+    def atributos_desde_texto(texto):
         atributos = {}
         if texto != "":
             for par in texto.split(";"):
@@ -159,17 +156,17 @@ class Trabajador:
             habilidades=codificar_lista(self._habilidades, lambda h: h.a_texto()),
             credenciales=codificar_lista(self._credenciales, lambda c: c.a_texto()),
             horas_maximas_semana=self._horas_maximas_semana,
-            atributos=self._atributos_a_texto(),
+            atributos=self.atributos_a_texto(),
         )
 
     @staticmethod
-    def _desde_fila(fila, habilidades_por_nombre, clase):
+    def desde_fila(fila, habilidades_por_nombre, clase):
         habilidades = decodificar_lista(
             fila["habilidades"],
             lambda texto: HabilidadDeTrabajador.desde_texto(texto, habilidades_por_nombre),
         )
         credenciales = decodificar_lista(fila["credenciales"], CredencialProfesional.desde_texto)
-        atributos = Trabajador._atributos_desde_texto(fila["atributos"])
+        atributos = Trabajador.atributos_desde_texto(fila["atributos"])
         return clase(
             int(fila["id"]),
             fila["nombre"],
@@ -181,4 +178,4 @@ class Trabajador:
 
     @staticmethod
     def cargar_todos(repo, habilidades_por_nombre):
-        return list(map(lambda fila: Trabajador._desde_fila(fila, habilidades_por_nombre, Trabajador), repo.find_all()))
+        return list(map(lambda fila: Trabajador.desde_fila(fila, habilidades_por_nombre, Trabajador), repo.find_all()))

@@ -27,6 +27,9 @@ class Habilidad:
     def __eq__(self, other):
         return isinstance(other, Habilidad) and self._nombre == other.get_nombre()
 
+    def __hash__(self):
+        return hash(self._nombre)
+
     def guardar(self, repo):
         repo.create(id=self._nombre, nombre=self._nombre)
 

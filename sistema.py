@@ -23,7 +23,7 @@ COLUMNAS_ASIGNACIONES = ["id", "trabajador_id", "labor_id", "franja", "fecha", "
 COLUMNAS_COLA = ["id", "trabajador_id", "labor_id", "franja", "fecha"]
 
 
-def _armar_repos(directorio):
+def armar_repos(directorio):
     os.makedirs(directorio, exist_ok=True)
     return {
         "habilidades": RepositorioCSV(os.path.join(directorio, "habilidades.csv"), COLUMNAS_HABILIDADES),
@@ -56,12 +56,12 @@ class Sistema:
         self._trabajadores_por_id = {}
         self._ocupacion = {}
         self._bitacora = []
-        self._reindexar_trabajadores()
+        self.reindexar_trabajadores()
 
     def get_trabajadores(self):
         return self._trabajadores
 
-    def _reindexar_trabajadores(self):
+    def reindexar_trabajadores(self):
         self._trabajadores_por_id = {}
         for trabajador in self._trabajadores:
             self._trabajadores_por_id[trabajador.get_id()] = trabajador
@@ -71,7 +71,7 @@ class Sistema:
 
     def set_trabajadores(self, trabajadores):
         self._trabajadores = trabajadores
-        self._reindexar_trabajadores()
+        self.reindexar_trabajadores()
 
     def get_areas(self):
         return self._areas
@@ -88,20 +88,20 @@ class Sistema:
     def obtener_asignaciones(self):
         return self._asignaciones
 
-    def _clave_ocupacion(self, fecha, franja, area):
+    def clave_ocupacion(self, fecha, franja, area):
         return ClaveOcupacion(fecha, franja, area)
 
     def registrar_ocupacion(self, fecha, franja, area):
-        clave = self._clave_ocupacion(fecha, franja, area)
+        clave = self.clave_ocupacion(fecha, franja, area)
         self._ocupacion[clave] = self._ocupacion.get(clave, 0) + 1
 
     def liberar_ocupacion(self, fecha, franja, area):
-        clave = self._clave_ocupacion(fecha, franja, area)
+        clave = self.clave_ocupacion(fecha, franja, area)
         if clave in self._ocupacion:
             self._ocupacion[clave] = max(0, self._ocupacion[clave] - 1)
 
     def contar_ocupacion(self, fecha, franja, area):
-        return self._ocupacion.get(self._clave_ocupacion(fecha, franja, area), 0)
+        return self._ocupacion.get(self.clave_ocupacion(fecha, franja, area), 0)
 
     def registrar_en_bitacora(self, tipo_accion, labor, trabajador):
         registro = (datetime.now(), tipo_accion, labor, trabajador)
@@ -130,13 +130,13 @@ class Sistema:
             raise TrabajadorNoAptoError(
                 f"{trabajador.get_nombre()} no es apto para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}'"
             )
-        if self._ya_esta_en_la_cola(trabajador, labor, franja, fecha):
+        if self.ya_esta_en_la_cola(trabajador, labor, franja, fecha):
             raise AsignacionDuplicadaError(
                 f"{trabajador.get_nombre()} ya tiene una solicitud pendiente para '{labor.get_titulo()}' en la franja '{franja.get_nombre()}' el {fecha}"
             )
         self._solicitudes_pendientes.encolar((trabajador, labor, franja, fecha))
 
-    def _ya_esta_en_la_cola(self, trabajador, labor, franja, fecha):
+    def ya_esta_en_la_cola(self, trabajador, labor, franja, fecha):
         for solicitud in self._solicitudes_pendientes.recorrer():
             trabajador_en_cola, labor_en_cola, franja_en_cola, fecha_en_cola = solicitud
             if trabajador_en_cola == trabajador and labor_en_cola == labor and franja_en_cola == franja and fecha_en_cola == fecha:
@@ -157,10 +157,10 @@ class Sistema:
         return nuevo_trabajador
 
     def ejecutar_acciones_semanales(self):
-        self._procesar_solicitudes_pendientes()
-        self._reiniciar_horas_trabajadores()
+        self.procesar_solicitudes_pendientes()
+        self.reiniciar_horas_trabajadores()
 
-    def _procesar_solicitudes_pendientes(self):
+    def procesar_solicitudes_pendientes(self):
         while not self._solicitudes_pendientes.esta_vacia():
             trabajador, labor, franja, fecha = self._solicitudes_pendientes.desencolar()
             try:
@@ -172,11 +172,11 @@ class Sistema:
                 self.registrar_ocupacion(fecha, franja, labor.get_area())
                 self.registrar_en_bitacora(TipoAccionBitacora.PROPUESTA, labor, trabajador)
 
-    def _reiniciar_horas_trabajadores(self):
+    def reiniciar_horas_trabajadores(self):
         for trabajador in self._trabajadores:
             trabajador.reiniciar_horas()
 
-    def _tiene_asignacion_aprobada(self, labor, franja, fecha):
+    def tiene_asignacion_aprobada(self, labor, franja, fecha):
         for asignacion in self._asignaciones:
             if asignacion.get_labor() == labor and asignacion.get_franja() == franja and asignacion.get_fecha() == fecha:
                 if asignacion.get_estado() == EstadoAsignacion.APROBADA:
@@ -195,7 +195,7 @@ class Sistema:
                 continue
             if not franja.tiene_lugar():
                 continue
-            if self._tiene_asignacion_aprobada(labor, franja, fecha):
+            if self.tiene_asignacion_aprobada(labor, franja, fecha):
                 continue
             candidatos.append(trabajador)
         return candidatos
@@ -204,7 +204,7 @@ class Sistema:
         nuevas_sugerencias = []
         for labor in self._labores:
             for franja in labor.get_area().get_franjas():
-                if self._tiene_asignacion_aprobada(labor, franja, fecha):
+                if self.tiene_asignacion_aprobada(labor, franja, fecha):
                     continue
                 candidatos = self.buscar_trabajadores_disponibles(labor, franja, fecha)
                 if len(candidatos) == 0:
@@ -224,11 +224,11 @@ class Sistema:
     def ciclo_semanal(self, fecha):
         self._asignaciones = []
         self._ocupacion = {}
-        self._reiniciar_horas_trabajadores()
-        self._procesar_solicitudes_pendientes()
+        self.reiniciar_horas_trabajadores()
+        self.procesar_solicitudes_pendientes()
         return self.generar_sugerencias(fecha)
 
-    def _recolectar_habilidades(self):
+    def recolectar_habilidades(self):
         # las Habilidad son compartidas (Trabajador y Labor apuntan a la misma por nombre),
         # asi que se juntan y deduplican por nombre antes de guardarlas una sola vez
         habilidades_por_nombre = {}
@@ -243,9 +243,9 @@ class Sistema:
         return list(habilidades_por_nombre.values())
 
     def guardar_todo(self, directorio=DIRECTORIO_DATOS_DEFAULT):
-        repos = _armar_repos(directorio)
+        repos = armar_repos(directorio)
 
-        for habilidad in self._recolectar_habilidades():
+        for habilidad in self.recolectar_habilidades():
             habilidad.guardar(repos["habilidades"])
 
         for area in self._areas:
@@ -274,7 +274,7 @@ class Sistema:
 
     @staticmethod
     def cargar_todo(directorio=DIRECTORIO_DATOS_DEFAULT):
-        repos = _armar_repos(directorio)
+        repos = armar_repos(directorio)
 
         habilidades = Habilidad.cargar_todas(repos["habilidades"])
         habilidades_por_nombre = {habilidad.get_nombre(): habilidad for habilidad in habilidades}

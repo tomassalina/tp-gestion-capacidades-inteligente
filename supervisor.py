@@ -40,4 +40,4 @@ class Supervisor(Trabajador):
 
     @staticmethod
     def cargar_todos(repo, habilidades_por_nombre):
-        return list(map(lambda fila: Trabajador._desde_fila(fila, habilidades_por_nombre, Supervisor), repo.find_all()))
+        return list(map(lambda fila: Trabajador.desde_fila(fila, habilidades_por_nombre, Supervisor), repo.find_all()))

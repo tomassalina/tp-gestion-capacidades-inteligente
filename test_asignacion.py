@@ -19,7 +19,7 @@ from labor import Labor
 from trabajador import Trabajador
 
 
-def _armar_escenario():
+def armar_escenario():
     habilidad = Habilidad("Coccion")
     franja = Franja("Manana", capacidad=1)
     area = AreaDeTrabajo("Cocina", [], [franja])
@@ -29,7 +29,7 @@ def _armar_escenario():
 
 
 def test_asignacion_tipo_o_estado_invalido_lanza_error():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     with pytest.raises(TypeError):
         Asignacion("no es trabajador", labor, franja, date(2026, 1, 1), [])
     with pytest.raises(ValueError):
@@ -37,7 +37,7 @@ def test_asignacion_tipo_o_estado_invalido_lanza_error():
 
 
 def test_crear_asignacion_exitosa_queda_pendiente():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     assert asignacion is not None
     assert asignacion.get_estado() == EstadoAsignacion.PENDIENTE
@@ -64,14 +64,14 @@ def test_validar_apto_informa_brecha_de_habilidades_y_credenciales_sin_repetidos
 
 
 def test_validar_apto_falla_si_franja_no_tiene_lugar():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     franja.ocupar_lugar()
     with pytest.raises(FranjaSinLugarError):
         Asignacion.validar_apto(trabajador, labor, franja, date(2026, 1, 1), [])
 
 
 def test_crear_lanza_asignacion_duplicada_error():
-    trabajador, labor, _ = _armar_escenario()
+    trabajador, labor, _ = armar_escenario()
     franja_grande = Franja("Manana", capacidad=5)
     primera = Asignacion(trabajador, labor, franja_grande, date(2026, 1, 1), [])
     with pytest.raises(AsignacionDuplicadaError):
@@ -79,7 +79,7 @@ def test_crear_lanza_asignacion_duplicada_error():
 
 
 def test_reasignar_pendiente_cambia_trabajador():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(2, "Beto", [HabilidadDeTrabajador(Habilidad("Coccion"), NivelHabilidad.BASICO)], [], 20)
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.reasignar(otro_trabajador)
@@ -89,7 +89,7 @@ def test_reasignar_pendiente_cambia_trabajador():
 
 
 def test_reasignar_a_trabajador_no_apto_lanza_error():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(2, "Beto", [], [], 20)
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     with pytest.raises(TrabajadorNoAptoError):
@@ -98,7 +98,7 @@ def test_reasignar_a_trabajador_no_apto_lanza_error():
 
 
 def test_rechazar_libera_horas_y_franja():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.rechazar()
     assert trabajador.get_horas_asignadas() == 0
@@ -106,7 +106,7 @@ def test_rechazar_libera_horas_y_franja():
 
 
 def test_rechazar_aprobada_lanza_value_error():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.aprobar()
     with pytest.raises(ValueError):
@@ -114,7 +114,7 @@ def test_rechazar_aprobada_lanza_value_error():
 
 
 def test_reasignar_aprobada_lanza_value_error():
-    trabajador, labor, franja = _armar_escenario()
+    trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(2, "Beto", [], [], 20)
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.aprobar()
@@ -152,7 +152,7 @@ def labor_con_requisitos():
     return labor, franja
 
 
-def _mockear_trabajador(labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas):
+def mockear_trabajador(labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas):
     trabajador_mock = MagicMock(spec=Trabajador)
     trabajador_mock.get_nombre.return_value = "Mockeado"
     trabajador_mock.tiene_habilidades.return_value = apto_habilidades
@@ -172,7 +172,7 @@ def _mockear_trabajador(labor, apto_habilidades, apto_credenciales_labor, apto_c
     return trabajador_mock
 
 
-def _mockear_asignacion_existente(labor, franja, fecha):
+def mockear_asignacion_existente(labor, franja, fecha):
     asignacion_mock = MagicMock(spec=Asignacion)
     asignacion_mock.get_labor.return_value = labor
     asignacion_mock.get_franja.return_value = franja
@@ -209,13 +209,13 @@ def test_validar_apto_aplica_las_6_reglas_de_negocio_de_forma_independiente(
     if franja_ocupada:
         franja.ocupar_lugar()  # capacidad=1, la deja justo sin lugar
 
-    trabajador_mock = _mockear_trabajador(
+    trabajador_mock = mockear_trabajador(
         labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas
     )
 
     asignaciones_existentes = []
     if hay_asignacion_previa:
-        asignaciones_existentes = [_mockear_asignacion_existente(labor, franja, fecha)]
+        asignaciones_existentes = [mockear_asignacion_existente(labor, franja, fecha)]
 
     contexto = pytest.raises(excepcion_esperada) if excepcion_esperada else nullcontext()
     with contexto:

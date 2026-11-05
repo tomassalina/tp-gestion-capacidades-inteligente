@@ -136,7 +136,7 @@ if __name__ == "__main__":
     print("\n--- Carla asigna directamente a Diego (sin pasar por solicitud/sugerencia) ---")
     fecha_asignacion_directa = date(2026, 9, 10)
     franja_directa = Franja(TipoFranja.TARDE, capacidad=1)
-    area_cocina.get_franjas().append(franja_directa)
+    area_cocina.agregar_franja(franja_directa)
     asignacion_directa = carla.asignar_trabajador(sistema, diego, labor_cocinar, franja_directa, fecha_asignacion_directa)
     print(
         f"{asignacion_directa.get_trabajador().get_nombre()} -> {asignacion_directa.get_labor().get_titulo()} "
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     print("\n--- Lo que pide el trabajador no se cruza con lo que genera el sistema solo ---")
     fecha_siguiente_2 = date(2026, 9, 16)
     franja_extra = Franja(TipoFranja.NOCHE, capacidad=2)
-    area_cocina.get_franjas().append(franja_extra)
+    area_cocina.agregar_franja(franja_extra)
     try:
         ana.solicitar_asignacion(sistema, labor_cocinar, franja_extra, fecha_siguiente_2)
     except TrabajadorNoAptoError as e:

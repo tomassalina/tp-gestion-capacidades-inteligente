@@ -34,14 +34,14 @@ class RepositorioCSV:
         self._columnas = columnas
 
         if not os.path.exists(self._ruta_archivo):
-            self._escribir_filas([])
+            self.escribir_filas([])
 
-    def _leer_filas(self):
+    def leer_filas(self):
         with open(self._ruta_archivo, newline="", encoding="utf-8") as archivo:
             lector = csv.DictReader(archivo)
             return list(lector)
 
-    def _escribir_filas(self, filas):
+    def escribir_filas(self, filas):
         with open(self._ruta_archivo, "w", newline="", encoding="utf-8") as archivo:
             escritor = csv.DictWriter(archivo, fieldnames=self._columnas)
             escritor.writeheader()
@@ -52,26 +52,26 @@ class RepositorioCSV:
             raise ValueError("create necesita un 'id'")
 
         id_nuevo = str(datos["id"])
-        filas = self._leer_filas()
+        filas = self.leer_filas()
         if any(fila["id"] == id_nuevo for fila in filas):
             raise RegistroDuplicadoError(f"Ya existe un registro con id '{id_nuevo}'")
 
         fila_nueva = {columna: str(datos.get(columna, "")) for columna in self._columnas}
         filas.append(fila_nueva)
-        self._escribir_filas(filas)
+        self.escribir_filas(filas)
         return fila_nueva
 
     def find(self, id):
         id_buscado = str(id)
-        filas = self._leer_filas()
+        filas = self.leer_filas()
         return next(filter(lambda fila: fila["id"] == id_buscado, filas), None)
 
     def find_all(self):
-        return self._leer_filas()
+        return self.leer_filas()
 
     def update(self, id, **datos):
         id_buscado = str(id)
-        filas = self._leer_filas()
+        filas = self.leer_filas()
 
         fila_encontrada = next(filter(lambda fila: fila["id"] == id_buscado, filas), None)
         if fila_encontrada is None:
@@ -80,15 +80,15 @@ class RepositorioCSV:
         for clave, valor in datos.items():
             fila_encontrada[clave] = str(valor)
 
-        self._escribir_filas(filas)
+        self.escribir_filas(filas)
         return fila_encontrada
 
     def delete(self, id):
         id_buscado = str(id)
-        filas = self._leer_filas()
+        filas = self.leer_filas()
         filas_restantes = list(filter(lambda fila: fila["id"] != id_buscado, filas))
 
         if len(filas_restantes) == len(filas):
             raise RegistroNoEncontradoError(f"No existe un registro con id '{id_buscado}'")
 
-        self._escribir_filas(filas_restantes)
+        self.escribir_filas(filas_restantes)

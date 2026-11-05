@@ -13,7 +13,7 @@ from supervisor import Supervisor
 from trabajador import Trabajador
 
 
-def _armar_escenario():
+def armar_escenario():
     habilidad = Habilidad("Coccion")
     franja = Franja("Manana", capacidad=1)
     area = AreaDeTrabajo("Cocina", [], [franja])
@@ -25,7 +25,7 @@ def _armar_escenario():
 
 
 def test_aprobar_asignaciones_pendientes_cambia_estado():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     sistema.obtener_asignaciones().append(asignacion)
     supervisor.aprobar_asignaciones_pendientes(sistema)
@@ -33,7 +33,7 @@ def test_aprobar_asignaciones_pendientes_cambia_estado():
 
 
 def test_reasignar_asignacion_delega_en_asignacion():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(3, "Beto", [HabilidadDeTrabajador(Habilidad("Coccion"), NivelHabilidad.BASICO)], [], 20)
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     supervisor.reasignar_asignacion(asignacion, otro_trabajador)
@@ -41,7 +41,7 @@ def test_reasignar_asignacion_delega_en_asignacion():
 
 
 def test_reasignar_asignacion_a_no_apto_lanza_error():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(3, "Beto", [], [], 20)
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     with pytest.raises(TrabajadorNoAptoError):
@@ -49,7 +49,7 @@ def test_reasignar_asignacion_a_no_apto_lanza_error():
 
 
 def test_rechazar_asignacion_la_saca_del_sistema():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     sistema.obtener_asignaciones().append(asignacion)
     supervisor.rechazar_asignacion(asignacion, sistema)
@@ -58,14 +58,14 @@ def test_rechazar_asignacion_la_saca_del_sistema():
 
 
 def test_agregar_regla_area_delega_en_area():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     area = labor.get_area()
     supervisor.agregar_regla_area(area, "Certificado de Higiene")
     assert "Certificado de Higiene" in area.get_credenciales_obligatorias()
 
 
 def test_asignar_trabajador_crea_asignacion_aprobada():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     fecha = date(2026, 1, 1)
     nueva = supervisor.asignar_trabajador(sistema, trabajador, labor, franja, fecha)
     assert nueva.get_estado() == EstadoAsignacion.APROBADA
@@ -74,7 +74,7 @@ def test_asignar_trabajador_crea_asignacion_aprobada():
 
 
 def test_asignar_trabajador_no_apto_lanza_error():
-    supervisor, sistema, trabajador, labor, franja = _armar_escenario()
+    supervisor, sistema, trabajador, labor, franja = armar_escenario()
     otro_trabajador = Trabajador(3, "Beto", [], [], 20)
     with pytest.raises(TrabajadorNoAptoError):
         supervisor.asignar_trabajador(sistema, otro_trabajador, labor, franja, date(2026, 1, 1))

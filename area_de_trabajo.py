@@ -41,6 +41,12 @@ class AreaDeTrabajo:
         self._franjas = franjas
         self._franjas_por_nombre = {franja.get_nombre(): franja for franja in franjas}
 
+    def agregar_franja(self, franja):
+        if not isinstance(franja, Franja):
+            raise TypeError("franja debe ser una instancia de Franja")
+        self._franjas.append(franja)
+        self._franjas_por_nombre[franja.get_nombre()] = franja
+
     def buscar_franja(self, nombre_franja):
         return self._franjas_por_nombre.get(nombre_franja)
 

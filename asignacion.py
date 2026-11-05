@@ -82,22 +82,7 @@ class Asignacion:
         if self._estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede reasignar una asignacion ya Aprobada")
 
-        if not nuevo_trabajador.tiene_habilidades(self._labor.get_habilidades_requeridas()):
-            raise TrabajadorNoAptoError(
-                f"{nuevo_trabajador.get_nombre()} no tiene todas las habilidades requeridas por la labor '{self._labor.get_titulo()}'"
-            )
-        if not nuevo_trabajador.tiene_credenciales_activas(self._labor.get_credenciales_requeridas(), self._fecha):
-            raise TrabajadorNoAptoError(
-                f"{nuevo_trabajador.get_nombre()} no tiene las credenciales de la labor activas en la fecha {self._fecha}"
-            )
-        if not nuevo_trabajador.tiene_credenciales_activas(self._labor.get_area().get_credenciales_obligatorias(), self._fecha):
-            raise TrabajadorNoAptoError(
-                f"{nuevo_trabajador.get_nombre()} no tiene las credenciales obligatorias del area '{self._labor.get_area().get_nombre()}' activas"
-            )
-        if not nuevo_trabajador.puede_tomar_horas(self._labor.get_duracion_horas()):
-            raise HorasMaximasExcedidasError(
-                f"{nuevo_trabajador.get_nombre()} superaria sus horas maximas semanales ({nuevo_trabajador.get_horas_maximas_semana()}hs)"
-            )
+        Asignacion.evaluar_aptitud(nuevo_trabajador, self._labor, self._fecha)
 
         self._trabajador.restar_horas(self._labor.get_duracion_horas())
         nuevo_trabajador.sumar_horas(self._labor.get_duracion_horas())
@@ -110,7 +95,7 @@ class Asignacion:
         self._franja.liberar_lugar()
 
     @staticmethod
-    def validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes):
+    def evaluar_aptitud(trabajador, labor, fecha):
         apto_habilidades = trabajador.tiene_habilidades(labor.get_habilidades_requeridas())
         apto_credenciales_labor = trabajador.tiene_credenciales_activas(labor.get_credenciales_requeridas(), fecha)
         apto_credenciales_area = trabajador.tiene_credenciales_activas(labor.get_area().get_credenciales_obligatorias(), fecha)
@@ -136,6 +121,10 @@ class Asignacion:
             raise HorasMaximasExcedidasError(
                 f"{trabajador.get_nombre()} superaria sus horas maximas semanales ({trabajador.get_horas_maximas_semana()}hs)"
             )
+
+    @staticmethod
+    def validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes):
+        Asignacion.evaluar_aptitud(trabajador, labor, fecha)
 
         if not franja.tiene_lugar():
             raise FranjaSinLugarError(
