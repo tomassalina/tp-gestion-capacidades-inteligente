@@ -17,9 +17,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import streamlit as st
 
+from datetime import timedelta
+
 from asignacion import Asignacion, AsignacionDuplicadaError, EstadoAsignacion, FranjaSinLugarError, HorasMaximasExcedidasError, TrabajadorNoAptoError
 from credencial_profesional import CredencialProfesional
-from habilidad import NivelHabilidad
+from habilidad import Habilidad, HabilidadDeTrabajador, NivelHabilidad
 from sistema import Sistema
 from supervisor import Supervisor
 from trabajador import Trabajador
@@ -41,7 +43,7 @@ sistema: Sistema = st.session_state.sistema
 # ---------------------------------------------------------------------------
 # Barra superior: titulo + persistencia (siempre visible, no escondida)
 # ---------------------------------------------------------------------------
-col_titulo, col_guardar, col_cargar = st.columns([3, 1, 1])
+col_titulo, col_guardar, col_cargar, col_reiniciar = st.columns([3, 1, 1, 1])
 with col_titulo:
     st.title("🧩 Gestión de Capacidades Inteligente")
     st.caption("Asignación inteligente de personal a labores, por fecha, franja y área")
@@ -55,6 +57,12 @@ with col_cargar:
     if st.button("📂 Cargar guardado", width="stretch"):
         st.session_state.sistema = Sistema.cargar_todo()
         st.toast("Datos recuperados desde data/", icon="📂")
+        st.rerun()
+with col_reiniciar:
+    st.write("")
+    if st.button("🔄 Reiniciar demo", width="stretch"):
+        st.session_state.sistema = armar_seed()[0]
+        st.toast("Demo reiniciada desde cero", icon="🔄")
         st.rerun()
 
 st.divider()
@@ -94,6 +102,7 @@ def mostrar_error_de_asignacion(error):
 # Rol: Trabajador
 # ---------------------------------------------------------------------------
 if rol == "👷 Trabajador":
+    st.caption("Vista de un trabajador: su propio perfil, su agenda, y pedir que lo asignen a una labor.")
     nombre_sel = st.selectbox("¿Quién sos?", [t.get_nombre() for t in trabajadores_comunes], key="trabajador_sel")
     trabajador = next(t for t in trabajadores_comunes if t.get_nombre() == nombre_sel)
 
@@ -112,6 +121,15 @@ if rol == "👷 Trabajador":
                 ])
             else:
                 st.warning("Sin habilidades cargadas todavía — no va a ser apto para ninguna labor que las exija.")
+            with st.expander("➕ Agregar habilidad"):
+                nombre_hab = st.text_input("Nombre de la habilidad", key=f"nueva_hab_nombre_{trabajador.get_id()}")
+                nivel_hab = st.selectbox(
+                    "Nivel", [NivelHabilidad.BASICO, NivelHabilidad.INTERMEDIO, NivelHabilidad.AVANZADO],
+                    format_func=lambda n: NOMBRES_NIVEL[n], key=f"nueva_hab_nivel_{trabajador.get_id()}",
+                )
+                if st.button("Agregar", key=f"agregar_hab_{trabajador.get_id()}") and nombre_hab.strip():
+                    trabajador.agregar_habilidad(HabilidadDeTrabajador(Habilidad(nombre_hab.strip()), nivel_hab))
+                    st.rerun()
         with c2:
             st.subheader("Credenciales")
             tabla([
@@ -122,6 +140,17 @@ if rol == "👷 Trabajador":
                 }
                 for c in trabajador.get_credenciales()
             ])
+            with st.expander("➕ Agregar credencial"):
+                nombre_cred = st.text_input("Nombre de la credencial", key=f"nueva_cred_nombre_{trabajador.get_id()}")
+                dias_vigencia = st.number_input(
+                    "Días hasta que caduca (negativo = ya vencida)", value=365, step=30, key=f"nueva_cred_dias_{trabajador.get_id()}"
+                )
+                if st.button("Agregar", key=f"agregar_cred_{trabajador.get_id()}") and nombre_cred.strip():
+                    nueva_credencial = CredencialProfesional(
+                        nombre_cred.strip(), date.today() - timedelta(days=365), date.today() + timedelta(days=int(dias_vigencia))
+                    )
+                    trabajador.set_credenciales(trabajador.get_credenciales() + [nueva_credencial])
+                    st.rerun()
 
         st.subheader("Horas esta semana")
         maximas = trabajador.get_horas_maximas_semana()
@@ -171,6 +200,8 @@ if rol == "👷 Trabajador":
                 st.success("Solicitud enviada — queda esperando en la cola hasta que se procese.")
             except (TrabajadorNoAptoError, AsignacionDuplicadaError, HorasMaximasExcedidasError, FranjaSinLugarError) as e:
                 mostrar_error_de_asignacion(e)
+            except Exception as e:
+                st.error(f"Error inesperado: {e}")
 
     with tab_pendientes:
         propias = [
@@ -186,11 +217,13 @@ if rol == "👷 Trabajador":
 # Rol: Supervisor
 # ---------------------------------------------------------------------------
 elif rol == "🧑‍💼 Supervisor":
+    st.caption("Vista de un supervisor: ver disponibilidad, aprobar/rechazar/reasignar, asignar directo, y auditoría.")
     nombre_sel = st.selectbox("¿Quién sos?", [s.get_nombre() for s in supervisores], key="supervisor_sel")
     supervisor = next(s for s in supervisores if s.get_nombre() == nombre_sel)
 
-    tab_disp, tab_cola, tab_directo, tab_reglas, tab_bitacora, tab_ocupacion = st.tabs(
-        ["Disponibilidad", "Cola y pendientes", "Asignar directo", "Reglas del área", "Bitácora", "Ocupación"]
+    tab_disp, tab_cola, tab_directo, tab_reglas, tab_registrar, tab_catalogo, tab_bitacora, tab_ocupacion = st.tabs(
+        ["Disponibilidad", "Cola y pendientes", "Asignar directo", "Reglas del área",
+         "Registrar personal", "Catálogo", "Bitácora", "Ocupación"]
     )
 
     with tab_disp:
@@ -256,6 +289,8 @@ elif rol == "🧑‍💼 Supervisor":
                     st.rerun()
                 except (TrabajadorNoAptoError, HorasMaximasExcedidasError) as e:
                     mostrar_error_de_asignacion(e)
+                except Exception as e:
+                    st.error(f"Error inesperado: {e}")
         if not sin_resolver:
             st.caption("No hay asignaciones pendientes ni automáticas en este momento.")
 
@@ -276,6 +311,8 @@ elif rol == "🧑‍💼 Supervisor":
                 st.success(f"{trabajador.get_nombre()} asignado directamente, ya Aprobado.")
             except (TrabajadorNoAptoError, AsignacionDuplicadaError, HorasMaximasExcedidasError, FranjaSinLugarError) as e:
                 mostrar_error_de_asignacion(e)
+            except Exception as e:
+                st.error(f"Error inesperado: {e}")
 
     with tab_reglas:
         area_sel = st.selectbox("Área", [a.get_nombre() for a in sistema.get_areas()], key="reglas_area")
@@ -285,6 +322,44 @@ elif rol == "🧑‍💼 Supervisor":
         if st.button("Agregar regla") and nueva.strip():
             supervisor.agregar_regla_area(area, nueva.strip())
             st.rerun()
+
+    with tab_registrar:
+        st.caption("Alta de personal nuevo con atributos opcionales (**kwargs) — extensión de consigna.")
+        nuevo_id = st.number_input("Legajo (ID)", min_value=100, step=1, value=100, key="registrar_id")
+        nuevo_nombre = st.text_input("Nombre", key="registrar_nombre")
+        nuevas_horas = st.number_input("Horas máximas semana", min_value=1, value=20, key="registrar_horas")
+        col_rol, col_area = st.columns(2)
+        rol_attr = col_rol.text_input("Rol (opcional)", key="registrar_rol")
+        area_attr = col_area.selectbox("Área de equipo (opcional)", ["(sin asignar)"] + [a.get_nombre() for a in sistema.get_areas()], key="registrar_area")
+        if st.button("Registrar", type="primary") and nuevo_nombre.strip():
+            atributos = {}
+            if rol_attr.strip():
+                atributos["rol"] = rol_attr.strip()
+            if area_attr != "(sin asignar)":
+                atributos["area_equipo"] = area_attr
+            try:
+                nuevo = sistema.registrar_personal(int(nuevo_id), nuevo_nombre.strip(), int(nuevas_horas), **atributos)
+                st.success(f"{nuevo.get_nombre()} registrado (legajo {nuevo.get_id()}).")
+            except Exception as e:
+                st.error(f"No se pudo registrar: {e}")
+
+    with tab_catalogo:
+        st.caption("Áreas, franjas y labores existentes — reglas 3, 6 y 10.")
+        for area in sistema.get_areas():
+            with st.expander(area.get_nombre()):
+                st.write("**Credenciales obligatorias:**", ", ".join(area.get_credenciales_obligatorias()) or "-")
+                tabla([{"Franja": f.get_nombre(), "Capacidad": f.get_capacidad()} for f in area.get_franjas()])
+        st.subheader("Labores")
+        tabla([
+            {
+                "Labor": l.get_titulo(), "Área": l.get_area().get_nombre(), "Duración (hs)": l.get_duracion_horas(),
+                "Habilidades requeridas": ", ".join(
+                    f"{h.get_habilidad().get_nombre()} ({NOMBRES_NIVEL[h.get_nivel_minimo()]})"
+                    for h in l.get_habilidades_requeridas()
+                ),
+            }
+            for l in sistema.get_labores()
+        ])
 
     with tab_bitacora:
         st.caption("Registro inmutable de toda propuesta, aprobación y reversión — regla 18.")
@@ -308,6 +383,7 @@ elif rol == "🧑‍💼 Supervisor":
 # Rol: Sistema (simula lo que en la vida real correria un cron de noche)
 # ---------------------------------------------------------------------------
 else:
+    st.caption("Vista del sistema automático: lo que en la vida real correría solo, de noche, sin que nadie lo dispare a mano.")
     st.info("No hay cron real posible en una demo: este rol simula lo que el sistema haría automáticamente al cierre de cada semana.")
     fecha = st.date_input("Fecha para el nuevo ciclo", value=date.today(), key="sistema_fecha")
 
