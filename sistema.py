@@ -193,7 +193,7 @@ class Sistema:
                 continue
             if not trabajador.puede_tomar_horas(labor.get_duracion_horas()):
                 continue
-            if not franja.tiene_lugar():
+            if Asignacion.contar_ocupantes(self.asignaciones, franja, labor.get_area(), fecha) >= franja.get_capacidad():
                 continue
             if self.tiene_asignacion_aprobada(labor, franja, fecha):
                 continue
@@ -294,6 +294,8 @@ class Sistema:
 
         asignaciones = Asignacion.cargar_todas(repos["asignaciones"], trabajadores_por_id, labores_por_id)
         sistema.obtener_asignaciones().extend(asignaciones)
+        for asignacion in asignaciones:
+            sistema.registrar_ocupacion(asignacion.get_fecha(), asignacion.get_franja(), asignacion.get_labor().get_area())
 
         for fila in repos["cola_pendientes"].find_all():
             trabajador = trabajadores_por_id[int(fila["trabajador_id"])]

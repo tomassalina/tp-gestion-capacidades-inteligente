@@ -48,7 +48,6 @@ class Asignacion:
         Asignacion.validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes)
 
         trabajador.sumar_horas(labor.get_duracion_horas())
-        franja.ocupar_lugar()
 
         self.trabajador = trabajador
         self.labor = labor
@@ -92,7 +91,6 @@ class Asignacion:
         if self.estado == EstadoAsignacion.APROBADA:
             raise ValueError("No se puede rechazar una asignacion ya Aprobada")
         self.trabajador.restar_horas(self.labor.get_duracion_horas())
-        self.franja.liberar_lugar()
 
     @staticmethod
     def evaluar_aptitud(trabajador, labor, fecha):
@@ -123,10 +121,19 @@ class Asignacion:
             )
 
     @staticmethod
+    def contar_ocupantes(asignaciones_existentes, franja, area, fecha):
+        return sum(
+            1
+            for asignacion in asignaciones_existentes
+            if asignacion.get_franja() == franja and asignacion.get_labor().get_area() == area and asignacion.get_fecha() == fecha
+        )
+
+    @staticmethod
     def validar_apto(trabajador, labor, franja, fecha, asignaciones_existentes):
         Asignacion.evaluar_aptitud(trabajador, labor, fecha)
 
-        if not franja.tiene_lugar():
+        ocupantes = Asignacion.contar_ocupantes(asignaciones_existentes, franja, labor.get_area(), fecha)
+        if ocupantes >= franja.get_capacidad():
             raise FranjaSinLugarError(
                 f"La franja '{franja.get_nombre()}' del area '{labor.get_area().get_nombre()}' no tiene lugar disponible"
             )

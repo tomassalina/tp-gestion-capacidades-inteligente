@@ -3,9 +3,10 @@ import pytest
 from franja import Franja, TipoFranja
 
 
-def test_franja_tiene_lugar_inicialmente():
+def test_franja_guarda_nombre_y_capacidad():
     franja = Franja(TipoFranja.MANIANA, capacidad=2)
-    assert franja.tiene_lugar()
+    assert franja.get_nombre() == TipoFranja.MANIANA
+    assert franja.get_capacidad() == 2
 
 
 def test_franja_nombre_fuera_del_tipo_lanza_value_error():
@@ -20,18 +21,3 @@ def test_franja_tipos_o_valores_invalidos_lanza_error():
         Franja("Manana", capacidad="2")
     with pytest.raises(ValueError):
         Franja("Manana", capacidad=0)
-
-
-def test_franja_se_completa_al_ocupar_todo_el_lugar():
-    franja = Franja("Manana", capacidad=1)
-    franja.ocupar_lugar()
-    assert not franja.tiene_lugar()
-    assert franja.get_trabajadores_asignados() == 1
-
-
-def test_franja_libera_lugar():
-    franja = Franja("Manana", capacidad=1)
-    franja.ocupar_lugar()
-    franja.liberar_lugar()
-    assert franja.tiene_lugar()
-    assert franja.get_trabajadores_asignados() == 0

@@ -52,7 +52,7 @@ def test_rechazar_asignacion_la_saca_del_sistema():
     supervisor, sistema, trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     sistema.obtener_asignaciones().append(asignacion)
-    supervisor.rechazar_asignacion(asignacion, sistema)
+    supervisor.rechazar_asignacion(sistema, asignacion)
     assert asignacion not in sistema.obtener_asignaciones()
     assert trabajador.get_horas_asignadas() == 0
 

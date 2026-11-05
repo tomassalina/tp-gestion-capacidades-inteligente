@@ -22,7 +22,6 @@ class Franja:
 
         self.nombre = nombre
         self.capacidad = capacidad
-        self.trabajadores_asignados = 0
 
     def get_nombre(self):
         return self.nombre
@@ -36,21 +35,7 @@ class Franja:
     def set_capacidad(self, capacidad):
         self.capacidad = capacidad
 
-    def get_trabajadores_asignados(self):
-        return self.trabajadores_asignados
-
-    def tiene_lugar(self):
-        return self.trabajadores_asignados < self.capacidad
-
-    def ocupar_lugar(self):
-        self.trabajadores_asignados += 1
-
-    def liberar_lugar(self):
-        if self.trabajadores_asignados > 0:
-            self.trabajadores_asignados -= 1
-
     def a_texto(self):
-        # no se persiste la ocupacion: se reconstruye sola cuando se recargan las asignaciones
         return f"{self.nombre}:{self.capacidad}"
 
     @staticmethod

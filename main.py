@@ -135,9 +135,7 @@ if __name__ == "__main__":
 
     print("\n--- Carla asigna directamente a Diego (sin pasar por solicitud/sugerencia) ---")
     fecha_asignacion_directa = date(2026, 9, 10)
-    franja_directa = Franja(TipoFranja.TARDE, capacidad=1)
-    area_cocina.agregar_franja(franja_directa)
-    asignacion_directa = carla.asignar_trabajador(sistema, diego, labor_cocinar, franja_directa, fecha_asignacion_directa)
+    asignacion_directa = carla.asignar_trabajador(sistema, diego, labor_cocinar, franja_tarde, fecha_asignacion_directa)
     print(
         f"{asignacion_directa.get_trabajador().get_nombre()} -> {asignacion_directa.get_labor().get_titulo()} "
         f"(estado: {asignacion_directa.get_estado()})"
@@ -162,10 +160,8 @@ if __name__ == "__main__":
 
     print("\n--- Lo que pide el trabajador no se cruza con lo que genera el sistema solo ---")
     fecha_siguiente_2 = date(2026, 9, 16)
-    franja_extra = Franja(TipoFranja.NOCHE, capacidad=2)
-    area_cocina.agregar_franja(franja_extra)
     try:
-        ana.solicitar_asignacion(sistema, labor_cocinar, franja_extra, fecha_siguiente_2)
+        ana.solicitar_asignacion(sistema, labor_cocinar, franja_noche, fecha_siguiente_2)
     except TrabajadorNoAptoError as e:
         print(f"Solicitud de Ana rechazada al instante: {e}")
     sistema.ciclo_semanal(fecha_siguiente_2)
@@ -175,7 +171,7 @@ if __name__ == "__main__":
     )
     print(f"Solicitud de Ana persistio: {asignacion_de_ana is not None} (estado: {asignacion_de_ana.get_estado() if asignacion_de_ana else None})")
     coincidencias_del_hueco = list(filter(
-        lambda a: a.get_labor() == labor_cocinar and a.get_franja() == franja_extra and a.get_fecha() == fecha_siguiente_2,
+        lambda a: a.get_labor() == labor_cocinar and a.get_franja() == franja_noche and a.get_fecha() == fecha_siguiente_2,
         sistema.obtener_asignaciones(),
     ))
     print(f"Asignaciones para esa labor+franja+fecha: {len(coincidencias_del_hueco)} (no se duplico)")

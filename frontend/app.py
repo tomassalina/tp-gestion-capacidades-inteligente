@@ -168,10 +168,10 @@ with tab_flujo:
             )
             b1, b2, b3 = st.columns(3)
             if b1.button("Aprobar", key=f"flujo_aprobar_{i}"):
-                supervisor.aprobar_asignacion(a)
+                supervisor.aprobar_asignacion(sistema, a)
                 st.rerun()
             if b2.button("Rechazar", key=f"flujo_rechazar_{i}"):
-                supervisor.rechazar_asignacion(a, sistema)
+                supervisor.rechazar_asignacion(sistema, a)
                 st.rerun()
             otros = candidatos_para_reasignar(a, sistema.get_trabajadores())
             if otros:
@@ -398,6 +398,7 @@ with tab_personal:
 # ---------------------------------------------------------------------------
 with tab_areas:
     st.subheader("Areas de trabajo")
+    fecha_ocupacion = st.date_input("Ver ocupacion para la fecha", value=date.today(), key="fecha_ocupacion_areas")
     for area in sistema.get_areas():
         with st.expander(f"Area: {area.get_nombre()}", expanded=True):
             st.write("**Credenciales obligatorias:**", ", ".join(area.get_credenciales_obligatorias()) or "-")
@@ -405,8 +406,8 @@ with tab_areas:
                 {
                     "Franja": franja.get_nombre(),
                     "Capacidad": franja.get_capacidad(),
-                    "Ocupados": franja.get_trabajadores_asignados(),
-                    "Tiene lugar": franja.tiene_lugar(),
+                    "Ocupados": sistema.contar_ocupacion(fecha_ocupacion, franja, area),
+                    "Tiene lugar": sistema.contar_ocupacion(fecha_ocupacion, franja, area) < franja.get_capacidad(),
                 }
                 for franja in area.get_franjas()
             ]
@@ -534,7 +535,7 @@ with tab_asignaciones:
                 c1, c2, c3 = st.columns([1, 2, 1])
                 if c1.button("Aprobar", key=f"aprobar_{i}"):
                     try:
-                        supervisor.aprobar_asignacion(asignacion)
+                        supervisor.aprobar_asignacion(sistema, asignacion)
                         st.rerun()
                     except Exception as e:
                         st.error(str(e))

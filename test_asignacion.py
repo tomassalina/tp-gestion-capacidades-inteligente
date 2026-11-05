@@ -65,9 +65,20 @@ def test_validar_apto_informa_brecha_de_habilidades_y_credenciales_sin_repetidos
 
 def test_validar_apto_falla_si_franja_no_tiene_lugar():
     trabajador, labor, franja = armar_escenario()
-    franja.ocupar_lugar()
+    otro_trabajador = Trabajador(2, "Beto", [HabilidadDeTrabajador(Habilidad("Coccion"), NivelHabilidad.BASICO)], [], 20)
+    ocupante = Asignacion(otro_trabajador, labor, franja, date(2026, 1, 1), [])
     with pytest.raises(FranjaSinLugarError):
-        Asignacion.validar_apto(trabajador, labor, franja, date(2026, 1, 1), [])
+        Asignacion.validar_apto(trabajador, labor, franja, date(2026, 1, 1), [ocupante])
+
+
+def test_contar_ocupantes_cuenta_solo_la_franja_area_y_fecha_exactas():
+    trabajador, labor, franja = armar_escenario()
+    otra_franja = Franja("Tarde", capacidad=1)
+    asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
+
+    assert Asignacion.contar_ocupantes([asignacion], franja, labor.get_area(), date(2026, 1, 1)) == 1
+    assert Asignacion.contar_ocupantes([asignacion], otra_franja, labor.get_area(), date(2026, 1, 1)) == 0
+    assert Asignacion.contar_ocupantes([asignacion], franja, labor.get_area(), date(2026, 1, 2)) == 0
 
 
 def test_crear_lanza_asignacion_duplicada_error():
@@ -97,12 +108,11 @@ def test_reasignar_a_trabajador_no_apto_lanza_error():
     assert asignacion.get_trabajador() == trabajador
 
 
-def test_rechazar_libera_horas_y_franja():
+def test_rechazar_libera_horas():
     trabajador, labor, franja = armar_escenario()
     asignacion = Asignacion(trabajador, labor, franja, date(2026, 1, 1), [])
     asignacion.rechazar()
     assert trabajador.get_horas_asignadas() == 0
-    assert franja.tiene_lugar()
 
 
 def test_rechazar_aprobada_lanza_value_error():
@@ -141,7 +151,7 @@ def test_reasignar_aprobada_lanza_value_error():
 @pytest.fixture
 def labor_con_requisitos():
     habilidad = Habilidad("Python")
-    franja = Franja(TipoFranja.MANIANA, capacidad=1)
+    franja = Franja(TipoFranja.MANIANA, capacidad=2)
     area = AreaDeTrabajo("Backend", ["NDA Firmado"], [franja])
     labor = Labor(
         1, "Armar API", "Escribir un endpoint nuevo", 4,
@@ -206,14 +216,14 @@ def test_validar_apto_aplica_las_6_reglas_de_negocio_de_forma_independiente(
     labor, franja = labor_con_requisitos
     fecha = date(2026, 1, 1)
 
-    if franja_ocupada:
-        franja.ocupar_lugar()  # capacidad=1, la deja justo sin lugar
-
     trabajador_mock = mockear_trabajador(
         labor, apto_habilidades, apto_credenciales_labor, apto_credenciales_area, puede_tomar_horas
     )
 
     asignaciones_existentes = []
+    if franja_ocupada:
+        # tantos ocupantes como la capacidad, para dejarla justo sin lugar
+        asignaciones_existentes = [mockear_asignacion_existente(labor, franja, fecha) for _ in range(franja.get_capacidad())]
     if hay_asignacion_previa:
         asignaciones_existentes = [mockear_asignacion_existente(labor, franja, fecha)]
 

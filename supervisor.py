@@ -5,11 +5,8 @@ from tipo_accion_bitacora import TipoAccionBitacora
 
 class Supervisor(Trabajador):
 
-    def aprobar_asignacion(self, asignacion, sistema=None):
-        if sistema is not None:
-            sistema.aprobar_asignacion(asignacion)
-        else:
-            asignacion.aprobar()
+    def aprobar_asignacion(self, sistema, asignacion):
+        sistema.aprobar_asignacion(asignacion)
 
     def ejecutar_acciones_del_sistema(self, sistema):
         sistema.ejecutar_acciones_semanales()
@@ -17,12 +14,12 @@ class Supervisor(Trabajador):
     def aprobar_asignaciones_pendientes(self, sistema):
         for asignacion in sistema.obtener_asignaciones():
             if asignacion.get_estado() == EstadoAsignacion.PENDIENTE:
-                self.aprobar_asignacion(asignacion, sistema)
+                self.aprobar_asignacion(sistema, asignacion)
 
     def reasignar_asignacion(self, asignacion, nuevo_trabajador):
         asignacion.reasignar(nuevo_trabajador)
 
-    def rechazar_asignacion(self, asignacion, sistema):
+    def rechazar_asignacion(self, sistema, asignacion):
         sistema.revertir_asignacion(asignacion)
 
     def agregar_regla_area(self, area, credencial):
