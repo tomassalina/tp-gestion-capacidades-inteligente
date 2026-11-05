@@ -24,12 +24,6 @@ ATRIBUTOS_ESTRUCTURA = {
 }
 CLASES_ESTRUCTURA = {"Nodo", "Cola", "ListaEnlazada", "Agenda"}
 
-# Clases que son "como un enum" (constantes de clase, sin instancias): no
-# tienen atributos de instancia que el AST pueda ver, asi que se listan a mano
-CONSTANTES_DE_CLASE = {
-    "TipoAccionBitacora": ["Propuesta", "Aprobacion", "Reversion"],
-}
-
 # Tipo de cada atributo (la catedra no usa type hints en el codigo, pero el
 # diagrama si los muestra para que se entienda de un vistazo). Para los que
 # salen de una clase "como un enum" (constantes de clase, no un Enum real de
@@ -83,10 +77,34 @@ TIPOS = {
     ("Sistema", "asignaciones"): "Asignacion[]",
     ("Sistema", "trabajadores_por_id"): "dict[int, Trabajador]",
     ("Sistema", "ocupacion"): "dict[tupla, int]",
-    ("Sistema", "bitacora"): "list[tupla]",
+    ("Sistema", "bitacora"): "list[tupla(fecha, TipoAccionBitacora, Labor, Trabajador)]",
     ("RepositorioCSV", "ruta_archivo"): "str",
     ("RepositorioCSV", "columnas"): "list[str]",
 }
+
+
+# Tipo de cada parametro de los metodos "principales" (ni accesor ni
+# persistencia). Igual que con TIPOS: la catedra no usa type hints, esto es
+# solo para que el diagrama se entienda de un vistazo.
+TIPOS_PARAMETRO = {
+    "other": "object", "nivel_minimo": "NivelHabilidad", "fecha_referencia": "date",
+    "credencial": "str", "franja": "Franja", "nombre_franja": "str",
+    "habilidad_de_trabajador": "HabilidadDeTrabajador", "otro_trabajador": "Trabajador",
+    "clave": "str", "valor_por_defecto": "object", "habilidades_requeridas": "HabilidadRequerida[]",
+    "credenciales_requeridas": "str[]", "fecha": "date", "horas_a_sumar": "int", "horas": "int",
+    "asignacion": "Asignacion", "sistema": "Sistema", "labor": "Labor",
+    "nuevo_trabajador": "Trabajador", "area": "AreaDeTrabajo", "trabajador": "Trabajador",
+    "asignaciones_existentes": "Asignacion[]", "id": "int", "fecha_obtencion": "date",
+    "fecha_caducidad": "date", "tipo_accion": "TipoAccionBitacora (Propuesta, Aprobacion, Reversion)", "nombre": "str",
+    "horas_max": "int", "**atributos": "", "nombre_requerido": "str",
+    "dato": "object", "valor": "object", "nodo_actual": "Nodo", "filas": "list[dict]",
+}
+
+
+def tipo_de_parametro(nombre_parametro):
+    if nombre_parametro.startswith("**"):
+        return nombre_parametro + " (kwargs opcionales)"
+    return f"{nombre_parametro}: {TIPOS_PARAMETRO.get(nombre_parametro, '?')}"
 
 
 def targets_de_assign(stmt):
@@ -116,7 +134,14 @@ def extraer_clases(archivo):
                         if attr not in atributos:
                             atributos.append(attr)
         metodos = [it.name for it in nodo.body if isinstance(it, ast.FunctionDef) and it.name != "__init__"]
-        clases.append({"nombre": nodo.name, "bases": bases, "atributos": atributos, "metodos": metodos})
+        parametros = {}
+        for it in nodo.body:
+            if isinstance(it, ast.FunctionDef) and it.name != "__init__":
+                nombres = [a.arg for a in it.args.args if a.arg != "self"]
+                if it.args.kwarg:
+                    nombres.append(f"**{it.args.kwarg.arg}")
+                parametros[it.name] = nombres
+        clases.append({"nombre": nodo.name, "bases": bases, "atributos": atributos, "metodos": metodos, "parametros": parametros})
     return clases
 
 
@@ -227,11 +252,24 @@ def dibujar_clase(nombre, x, y, width):
     grupos = [g for g in [accesores, negocio, persistencia] if g]
     if c["atributos"] and grupos:
         lineas.append(("", False))
+    presupuesto_chars = (width - 28) / ANCHO_CHAR
     for i, grupo in enumerate(grupos):
         if i > 0:
             lineas.append(("", False))
         for met in grupo:
-            lineas.append((f"+ {met}()", False))
+            if grupo is not negocio:
+                lineas.append((f"+ {met}()", False))
+                continue
+            partes = [tipo_de_parametro(p) for p in c["parametros"].get(met, [])]
+            if not partes:
+                lineas.append((f"+ {met}()", False))
+            elif len(f"+ {met}({', '.join(partes)})") <= presupuesto_chars:
+                lineas.append((f"+ {met}({', '.join(partes)})", False))
+            else:
+                lineas.append((f"+ {met}(", False))
+                for parte in partes:
+                    lineas.append((f"    {parte},", False))
+                lineas.append((")", False))
 
     altura = TITLE_H + PAD + max(len(lineas), 1) * LINE_H + PAD
     elementos.append(rect(x, y, width, altura))
@@ -321,11 +359,10 @@ fin3 = apilar("HabilidadDeTrabajador", COL3, fin3, ANCHO3)
 fin3 = apilar("HabilidadRequerida", COL3, fin3, ANCHO3)
 fin3 = apilar("Agenda", COL3, fin3, ANCHO3)
 
-# Columna 4: AreaDeTrabajo, Franja, Labor, TipoAccionBitacora
+# Columna 4: AreaDeTrabajo, Franja, Labor
 fin4 = apilar("AreaDeTrabajo", COL4, None, ANCHO4, gap=0)
 fin4 = apilar("Franja", COL4, fin4, ANCHO4)
 fin4 = apilar("Labor", COL4, fin4, ANCHO4)
-fin4 = apilar("TipoAccionBitacora", COL4, fin4, ANCHO4)
 
 fin = max(fin, fin3, fin4)
 
@@ -365,7 +402,6 @@ flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="b", ld="t")       # 
 flecha_horizontal_entre_columnas("Trabajador", "Agenda", punto_de_borde(cajas["Agenda"], "l")[1])  # tiene
 flecha_horizontal_entre_columnas("CredencialProfesional", "Trabajador", punto_de_borde(cajas["CredencialProfesional"], "r")[1])  # posee
 flecha_horizontal_entre_columnas("Asignacion", "Trabajador", punto_de_borde(cajas["Asignacion"], "r")[1])  # trabajador
-flecha_horizontal_entre_columnas("Sistema", "TipoAccionBitacora", punto_de_borde(cajas["TipoAccionBitacora"], "l")[1])  # usa
 
 flecha_entre("Franja", "AreaDeTrabajo", triangulo=True, lo="t", ld="b")       # tiene
 flecha_salteando("Labor", "AreaDeTrabajo", lado="r")                          # salta Franja, en
