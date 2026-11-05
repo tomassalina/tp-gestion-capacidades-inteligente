@@ -158,7 +158,7 @@ def next_seed():
     return _seed[0]
 
 
-def _base(tipo, x, y, width, height, **extra):
+def base_elemento(tipo, x, y, width, height, **extra):
     s = next_seed()
     el = {
         "id": f"{tipo}-{s}", "type": tipo, "x": x, "y": y, "width": width, "height": height,
@@ -173,11 +173,11 @@ def _base(tipo, x, y, width, height, **extra):
 
 
 def rect(x, y, width, height):
-    return _base("rectangle", x, y, width, height)
+    return base_elemento("rectangle", x, y, width, height)
 
 
 def texto(x, y, width, cadena, size=14):
-    el = _base("text", x, y, width, size + 6)
+    el = base_elemento("text", x, y, width, size + 6)
     el["text"] = cadena
     el["fontSize"] = size
     el["fontFamily"] = 1
@@ -191,7 +191,7 @@ def texto(x, y, width, cadena, size=14):
 
 
 def linea(x1, y1, x2, y2, strokeWidth=1.3):
-    el = _base("line", min(x1, x2), min(y1, y2), abs(x2 - x1) or 1, abs(y2 - y1) or 1)
+    el = base_elemento("line", min(x1, x2), min(y1, y2), abs(x2 - x1) or 1, abs(y2 - y1) or 1)
     el["strokeWidth"] = strokeWidth
     el["points"] = [[x1 - el["x"], y1 - el["y"]], [x2 - el["x"], y2 - el["y"]]]
     el["lastCommittedPoint"] = None
@@ -203,7 +203,7 @@ def linea(x1, y1, x2, y2, strokeWidth=1.3):
 
 
 def flecha(x1, y1, x2, y2, triangulo=False):
-    el = _base("arrow", min(x1, x2), min(y1, y2), abs(x2 - x1) or 1, abs(y2 - y1) or 1)
+    el = base_elemento("arrow", min(x1, x2), min(y1, y2), abs(x2 - x1) or 1, abs(y2 - y1) or 1)
     ox, oy = el["x"], el["y"]
     el["points"] = [[x1 - ox, y1 - oy], [x2 - ox, y2 - oy]]
     el["lastCommittedPoint"] = None
@@ -330,7 +330,7 @@ def flecha_horizontal_entre_columnas(origen, destino, y_absoluto, triangulo=Fals
 def flecha_elbow(puntos, triangulo=False):
     xs = [p[0] for p in puntos]
     ys = [p[1] for p in puntos]
-    el = _base("arrow", min(xs), min(ys), (max(xs) - min(xs)) or 1, (max(ys) - min(ys)) or 1)
+    el = base_elemento("arrow", min(xs), min(ys), (max(xs) - min(xs)) or 1, (max(ys) - min(ys)) or 1)
     ox, oy = el["x"], el["y"]
     el["points"] = [[px - ox, py - oy] for px, py in puntos]
     el["lastCommittedPoint"] = None

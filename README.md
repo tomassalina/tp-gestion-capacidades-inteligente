@@ -74,9 +74,9 @@ Tras las primeras semanas de uso del prototipo, los supervisores de IIT detectar
 
 ### Nuevas Reglas de Negocio
 
-13. **Labores urgentes en espera:** Cuando se solicita cubrir una labor urgente y no existe personal disponible (según la regla 11), la labor no se descarta: queda en espera. Cada vez que se libera capacidad (por una reversión, por el inicio de una nueva semana o por el alta de personal), el sistema intenta cubrir las labores en espera **respetando estrictamente el orden en que fueron quedando pendientes**. Si la primera de ellas sigue sin poder cubrirse, conserva su lugar y no es adelantada por las siguientes. Debe poder consultarse cuántas labores esperan y cuál es la próxima a atender, sin alterar la espera. *(Estructura prevista: cola FIFO. Pendiente de implementar.)*
+13. **Labores urgentes en espera:** Cuando se solicita cubrir una labor urgente y no existe personal disponible (según la regla 11), la labor no se descarta: queda en espera. Cada vez que se libera capacidad (por una reversión, por el inicio de una nueva semana o por el alta de personal), el sistema intenta cubrir las labores en espera **respetando estrictamente el orden en que fueron quedando pendientes**. Si la primera de ellas sigue sin poder cubrirse, conserva su lugar y no es adelantada por las siguientes. Debe poder consultarse cuántas labores esperan y cuál es la próxima a atender, sin alterar la espera. *(Estructura prevista: cola FIFO. **Decisión del equipo: no se implementa** — de las 6 reglas nuevas se eligió resolver 15, 16, 17 y 18; el FIFO de espera ya está cubierto conceptualmente por la cola de solicitudes pendientes del sistema base.)*
 
-14. **Reversión de propuestas:** Un supervisor puede revertir asignaciones que aún estén en estado 'Pendiente'. La reversión siempre actúa sobre **la propuesta más reciente** realizada en su área; si se revierte nuevamente, actúa sobre la anterior, y así sucesivamente. Revertir debe devolver al trabajador las horas descontadas y liberar el cupo en la franja correspondiente. Una asignación ya 'Aprobada' no puede revertirse: si la propuesta más reciente está aprobada, el sistema debe informarlo y no revertir ninguna otra. *(Estructura prevista: cola LIFO/pila. Pendiente de implementar.)*
+14. **Reversión de propuestas:** Un supervisor puede revertir asignaciones que aún estén en estado 'Pendiente'. La reversión siempre actúa sobre **la propuesta más reciente** realizada en su área; si se revierte nuevamente, actúa sobre la anterior, y así sucesivamente. Revertir debe devolver al trabajador las horas descontadas y liberar el cupo en la franja correspondiente. Una asignación ya 'Aprobada' no puede revertirse: si la propuesta más reciente está aprobada, el sistema debe informarlo y no revertir ninguna otra. *(Estructura prevista: cola LIFO/pila. **Decisión del equipo: no se implementa** — ver nota de la regla 13. El sistema sí tiene reversión de asignaciones (`Sistema.revertir_asignacion`), pero actúa sobre la asignación que el supervisor elige, no sobre una pila por área.)*
 
 15. **Brecha de capacidades:** Cuando un trabajador resulta inapto para una labor (reglas 4 y 10), el sistema debe informar **exactamente qué habilidades y qué credenciales le faltan**, sin repeticiones. Además, debe permitir consultar qué habilidades tienen en común dos trabajadores y cuáles posee uno pero no el otro. Registrar dos veces la misma habilidad en un trabajador no debe alterar su repertorio. **(Implementado — ver abajo.)**
 
@@ -123,4 +123,19 @@ Tras las primeras semanas de uso del prototipo, los supervisores de IIT detectar
 **Regla 18 — Bitácora de auditoría (`tupla`):** `Sistema` mantiene `bitacora`, una lista donde cada entrada es una **tupla** `(fecha_hora, tipo_accion, labor, trabajador)` creada con `registrar_en_bitacora`. Se registra una entrada en cada propuesta (creación de una `Asignacion`), cada aprobación (`Sistema.aprobar_asignacion`) y cada reversión (`Sistema.revertir_asignacion`). `obtener_bitacora()` devuelve una tupla de tuplas (no la lista interna), así que ni los registros ni la colección que se expone hacia afuera pueden alterarse. A diferencia de `ocupacion` y `asignaciones`, la bitácora **no se reinicia** en `ciclo_semanal`: es un historial permanente.
 
 *Por qué una tupla y no una lista o un diccionario:* cada registro es un hecho que ya ocurrió y que por consigna debe ser "definitivo". Una tupla no tiene métodos para modificar sus campos una vez creada (`registro[1] = ...` lanza `TypeError`), a diferencia de una lista, que sí permite `append`/`__setitem__`. No se eligió un diccionario porque el orden de los cuatro campos es fijo y conocido de antemano (no hace falta buscar por clave), así que una tupla es la estructura más simple y liviana que ya impone, por construcción, la inmutabilidad que pide la regla.
+
+### Inventario completo de estructuras de datos de la cátedra
+
+No solo las de esta extensión: así queda usada, con su virtud real, cada estructura vista en la materia:
+
+| Estructura | Dónde | Para qué |
+|---|---|---|
+| `dict` + `**kwargs` | `Sistema.registrar_personal`, `Trabajador.atributos` | Atributos variables por trabajador sin definir un campo por cada uno (extensión de kwargs) |
+| `dict` + tupla como clave | `Sistema.ocupacion` | Regla 16: consulta O(1) de ocupación por fecha+franja+área |
+| `set` | `Trabajador.repertorio_habilidades` | Regla 15: dedupe y comparación de repertorios por intersección/diferencia |
+| `tupla` | `Sistema.bitacora` | Regla 18: registros de auditoría inmutables por construcción |
+| Cola (FIFO, con `Nodo`) | `Sistema.solicitudes_pendientes` | Reglas base: procesar solicitudes en el orden en que llegaron |
+| Lista enlazada + recursión + herencia | `Agenda` (hereda de `ListaEnlazada`) | Regla 17: agenda del trabajador siempre ordenada, insertando/sacando sin desplazar el resto |
+
+Las 6 estructuras que da el programa de la materia están cubiertas. De las 6 reglas nuevas de esta extensión se implementaron 4 (15, 16, 17, 18); 13 y 14 fueron una decisión consciente de no implementarlas (ver las notas en cada una), no un faltante.
 
