@@ -90,6 +90,15 @@ def test_sistema_guarda_y_recarga_todo_el_grafo(tmp_path, escenario_completo):
 
     assert recargado.get_solicitudes_pendientes().get_cantidad() == 1
 
+    bitacora_original = escenario_completo.obtener_bitacora()
+    bitacora_recargada = recargado.obtener_bitacora()
+    assert len(bitacora_recargada) == len(bitacora_original)
+    for original, recargado_registro in zip(bitacora_original, bitacora_recargada):
+        assert recargado_registro[0] == original[0]
+        assert recargado_registro[1] == original[1]
+        assert recargado_registro[2].get_titulo() == original[2].get_titulo()
+        assert recargado_registro[3].get_nombre() == original[3].get_nombre()
+
 
 def test_guardar_todo_dos_veces_seguidas_no_choca_con_ids_duplicados(tmp_path, escenario_completo):
     directorio = os.path.join(tmp_path, "datos")

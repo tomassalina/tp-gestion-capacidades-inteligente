@@ -20,6 +20,7 @@ COLUMNAS_LABORES = ["id", "titulo", "descripcion", "duracion_horas", "habilidade
 COLUMNAS_TRABAJADORES = ["id", "nombre", "habilidades", "credenciales", "horas_maximas_semana", "atributos"]
 COLUMNAS_ASIGNACIONES = ["id", "trabajador_id", "labor_id", "franja", "fecha", "estado"]
 COLUMNAS_COLA = ["id", "trabajador_id", "labor_id", "franja", "fecha"]
+COLUMNAS_BITACORA = ["id", "fecha_hora", "tipo_accion", "labor_id", "trabajador_id"]
 
 
 def armar_repos(directorio):
@@ -32,6 +33,7 @@ def armar_repos(directorio):
         "supervisores": RepositorioCSV(os.path.join(directorio, "supervisores.csv"), COLUMNAS_TRABAJADORES),
         "asignaciones": RepositorioCSV(os.path.join(directorio, "asignaciones.csv"), COLUMNAS_ASIGNACIONES),
         "cola_pendientes": RepositorioCSV(os.path.join(directorio, "cola_pendientes.csv"), COLUMNAS_COLA),
+        "bitacora": RepositorioCSV(os.path.join(directorio, "bitacora.csv"), COLUMNAS_BITACORA),
     }
 
 class Sistema:
@@ -273,6 +275,15 @@ class Sistema:
                 fecha=fecha.isoformat(),
             )
 
+        for i, (fecha_hora, tipo_accion, labor, trabajador) in enumerate(self.bitacora):
+            repos["bitacora"].create(
+                id=str(i),
+                fecha_hora=fecha_hora.isoformat(),
+                tipo_accion=tipo_accion,
+                labor_id=labor.get_id(),
+                trabajador_id=trabajador.get_id(),
+            )
+
     @staticmethod
     def cargar_todo(directorio=DIRECTORIO_DATOS_DEFAULT):
         repos = armar_repos(directorio)
@@ -304,5 +315,12 @@ class Sistema:
             franja = labor.get_area().buscar_franja(fila["franja"])
             fecha = date.fromisoformat(fila["fecha"])
             sistema.get_solicitudes_pendientes().encolar((trabajador, labor, franja, fecha))
+
+        registros_bitacora = sorted(repos["bitacora"].find_all(), key=lambda fila: int(fila["id"]))
+        for fila in registros_bitacora:
+            fecha_hora = datetime.fromisoformat(fila["fecha_hora"])
+            labor = labores_por_id[int(fila["labor_id"])]
+            trabajador = trabajadores_por_id[int(fila["trabajador_id"])]
+            sistema.bitacora.append((fecha_hora, fila["tipo_accion"], labor, trabajador))
 
         return sistema
