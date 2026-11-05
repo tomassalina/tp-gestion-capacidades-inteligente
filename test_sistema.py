@@ -140,8 +140,9 @@ def test_contar_ocupacion_es_inmediato_y_no_recorre_asignaciones(sistema_con_ana
 def test_clave_de_ocupacion_no_se_puede_alterar_una_vez_creada(sistema_con_ana):
     sistema, trabajador, labor, franja = sistema_con_ana
     clave = sistema.clave_ocupacion(date(2026, 1, 1), franja, labor.get_area())
-    with pytest.raises(AttributeError):
-        clave.franja = "otra"
+    assert isinstance(clave, tuple)
+    with pytest.raises(TypeError):
+        clave[1] = "otra"
 
 
 def test_bitacora_registra_propuesta_y_aprobacion(sistema_con_ana):
