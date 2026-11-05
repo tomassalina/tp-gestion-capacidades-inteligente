@@ -91,6 +91,16 @@ def test_sistema_guarda_y_recarga_todo_el_grafo(tmp_path, escenario_completo):
     assert recargado.get_solicitudes_pendientes().get_cantidad() == 1
 
 
+def test_guardar_todo_dos_veces_seguidas_no_choca_con_ids_duplicados(tmp_path, escenario_completo):
+    directorio = os.path.join(tmp_path, "datos")
+    escenario_completo.guardar_todo(directorio)
+    escenario_completo.guardar_todo(directorio)
+
+    recargado = Sistema.cargar_todo(directorio)
+    assert len(recargado.get_trabajadores()) == 3
+    assert len(recargado.obtener_asignaciones()) == 1
+
+
 def test_sistema_recargado_comparte_la_misma_habilidad_entre_trabajador_y_labor(tmp_path, escenario_completo):
     directorio = os.path.join(tmp_path, "datos")
     escenario_completo.guardar_todo(directorio)

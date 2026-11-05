@@ -240,6 +240,11 @@ class Sistema:
     def guardar_todo(self, directorio=DIRECTORIO_DATOS_DEFAULT):
         repos = armar_repos(directorio)
 
+        # guardar_todo es una foto completa del sistema, no un agregado: antes de
+        # escribir se vacia cada csv, sino una segunda corrida choca con ids ya guardados
+        for repo in repos.values():
+            repo.escribir_filas([])
+
         for habilidad in self.recolectar_habilidades():
             habilidad.guardar(repos["habilidades"])
 
