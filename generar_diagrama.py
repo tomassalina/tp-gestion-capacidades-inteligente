@@ -22,6 +22,21 @@ ATRIBUTOS_ESTRUCTURA = {
 }
 CLASES_ESTRUCTURA = {"Nodo", "Cola", "ListaEnlazada", "Agenda"}
 
+# Clases que son "como un enum" (constantes de clase, sin instancias): no
+# tienen atributos de instancia que el AST pueda ver, asi que se listan a mano
+CONSTANTES_DE_CLASE = {
+    "TipoAccionBitacora": ["Propuesta", "Aprobacion", "Reversion"],
+}
+
+# Atributos cuyo valor sale de una clase de constantes (no es un Enum real de
+# Python, la catedra no lo enseña asi; es "como un enum" por convencion propia)
+ATRIBUTOS_PSEUDO_ENUM = {
+    ("HabilidadDeTrabajador", "nivel"): "como un enum: Basico=1, Intermedio=2, Avanzado=3",
+    ("HabilidadRequerida", "nivel_minimo"): "como un enum: Basico=1, Intermedio=2, Avanzado=3",
+    ("Franja", "nombre"): "como un enum: Manana, Tarde, Noche",
+    ("Asignacion", "estado"): "como un enum: Automatica, Pendiente, Aprobada",
+}
+
 
 def targets_de_assign(stmt):
     objetivos = []
@@ -140,6 +155,8 @@ def dibujar_clase(nombre, x, y, width):
     for attr in c["atributos"]:
         subrayar = caja_estructura or (nombre, attr) in ATRIBUTOS_ESTRUCTURA
         sufijo = f"  [{ATRIBUTOS_ESTRUCTURA[(nombre, attr)]}]" if (nombre, attr) in ATRIBUTOS_ESTRUCTURA else ""
+        if (nombre, attr) in ATRIBUTOS_PSEUDO_ENUM:
+            sufijo += f"  ({ATRIBUTOS_PSEUDO_ENUM[(nombre, attr)]})"
         lineas.append((f"- {attr}{sufijo}", subrayar))
     if c["atributos"] and c["metodos"]:
         lineas.append(("", False))
@@ -167,13 +184,28 @@ def apilar(nombre, x, y_prev_fin, ancho, gap=50):
     return y + altura
 
 
+def punto_de_borde(caja, lado):
+    x, y, w, h = caja
+    puntos = {"r": (w, h / 2), "l": (0, h / 2), "b": (w / 2, h), "t": (w / 2, 0)}
+    dx, dy = puntos[lado]
+    return x + dx, y + dy
+
+
 def flecha_entre(origen, destino, triangulo=False, lo="r", ld="l"):
+    x1, y1 = punto_de_borde(cajas[origen], lo)
+    x2, y2 = punto_de_borde(cajas[destino], ld)
+    elementos.append(flecha(x1, y1, x2, y2, triangulo=triangulo))
+
+
+def flecha_horizontal_a_altura_fija(origen, destino, y, triangulo=False):
+    # para cajas vecinas en una misma fila con distinta altura: al conectarlas
+    # por el centro vertical de cada una quedarian en diagonal, asi que se usa
+    # una unica altura fija (relativa a esa fila) para los dos extremos.
     ox, oy, ow, oh = cajas[origen]
     dx, dy, dw, dh = cajas[destino]
-    puntos = {"r": (ow, oh / 2), "l": (0, oh / 2), "b": (ow / 2, oh), "t": (ow / 2, 0)}
-    x1, y1 = ox + puntos[lo][0], oy + puntos[lo][1]
-    x2, y2 = dx + puntos[ld][0], dy + puntos[ld][1]
-    elementos.append(flecha(x1, y1, x2, y2, triangulo=triangulo))
+    x1 = ox + ow if dx > ox else ox
+    x2 = dx if dx > ox else dx + dw
+    elementos.append(flecha(x1, oy + y, x2, dy + y, triangulo=triangulo))
 
 
 # ---------------------------------------------------------------------------
@@ -193,23 +225,38 @@ fin = apilar("Trabajador", COL2, None, ANCHO2, gap=0)
 fin = apilar("Supervisor", COL2, fin, ANCHO2)
 fin = apilar("Sistema", COL2, fin, ANCHO2)
 
-# Columna 3: Habilidad, HabilidadDeTrabajador, HabilidadRequerida, Nodo, Cola, ListaEnlazada, Agenda
-# (Nodo queda pegado a Cola porque Cola lo usa directamente; ListaEnlazada
-# queda pegada a Agenda porque Agenda hereda de ella)
-fin = apilar("Habilidad", COL3, None, ANCHO3, gap=0)
-fin = apilar("HabilidadDeTrabajador", COL3, fin, ANCHO3)
-fin = apilar("HabilidadRequerida", COL3, fin, ANCHO3)
-fin = apilar("Nodo", COL3, fin, ANCHO3)
-fin = apilar("Cola", COL3, fin, ANCHO3)
-fin = apilar("ListaEnlazada", COL3, fin, ANCHO3)
-fin = apilar("Agenda", COL3, fin, ANCHO3)
+# Columna 3: Habilidad, HabilidadDeTrabajador, HabilidadRequerida, Agenda
+fin3 = apilar("Habilidad", COL3, None, ANCHO3, gap=0)
+fin3 = apilar("HabilidadDeTrabajador", COL3, fin3, ANCHO3)
+fin3 = apilar("HabilidadRequerida", COL3, fin3, ANCHO3)
+fin3 = apilar("Agenda", COL3, fin3, ANCHO3)
 
-# Columna 4: AreaDeTrabajo, Franja, Labor, TipoAccionBitacora, RepositorioCSV
-fin = apilar("AreaDeTrabajo", COL4, None, ANCHO4, gap=0)
-fin = apilar("Franja", COL4, fin, ANCHO4)
-fin = apilar("Labor", COL4, fin, ANCHO4)
-fin = apilar("TipoAccionBitacora", COL4, fin, ANCHO4)
-fin = apilar("RepositorioCSV", COL4, fin, ANCHO4)
+# Columna 4: AreaDeTrabajo, Franja, Labor, TipoAccionBitacora
+fin4 = apilar("AreaDeTrabajo", COL4, None, ANCHO4, gap=0)
+fin4 = apilar("Franja", COL4, fin4, ANCHO4)
+fin4 = apilar("Labor", COL4, fin4, ANCHO4)
+fin4 = apilar("TipoAccionBitacora", COL4, fin4, ANCHO4)
+
+fin = max(fin, fin3, fin4)
+
+# ---------------------------------------------------------------------------
+# Clases "secundarias" (Nodo, Cola, ListaEnlazada, RepositorioCSV): todas
+# juntas, una fila horizontal debajo de todo. Cola y ListaEnlazada se alinean
+# por x con Nodo (que usan ambas) y Agenda (que hereda de ListaEnlazada), para
+# que esas flechas sigan siendo rectas.
+# ---------------------------------------------------------------------------
+y_sec = fin + 60
+ANCHO_SEC = 320
+x_lista = cajas["Agenda"][0] + (cajas["Agenda"][2] - ANCHO_SEC) / 2  # centrada bajo Agenda
+x_nodo = x_lista - ANCHO_SEC - 40
+x_cola = x_nodo - ANCHO_SEC - 40
+x_repo = x_lista + ANCHO_SEC + 40
+
+dibujar_clase("Cola", x_cola, y_sec, ANCHO_SEC)
+dibujar_clase("Nodo", x_nodo, y_sec, ANCHO_SEC)
+dibujar_clase("ListaEnlazada", x_lista, y_sec, ANCHO_SEC)
+dibujar_clase("RepositorioCSV", x_repo, y_sec, ANCHO_SEC)
+fin = max(cajas[n][1] + cajas[n][3] for n in ["Cola", "Nodo", "ListaEnlazada", "RepositorioCSV"])
 
 # ---------------------------------------------------------------------------
 # Flechas: solo entre cajas adyacentes de la misma columna, asi quedan
@@ -220,8 +267,9 @@ flecha_entre("Supervisor", "Trabajador", triangulo=True, lo="t", ld="b")       #
 flecha_entre("Sistema", "Supervisor", lo="t", ld="b")                         # gestiona
 
 flecha_entre("HabilidadDeTrabajador", "Habilidad", triangulo=True, lo="t", ld="b")
-flecha_entre("Cola", "Nodo", triangulo=True, lo="t", ld="b")                  # usa
-flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="t", ld="b")       # herencia
+flecha_horizontal_a_altura_fija("Cola", "Nodo", 70, triangulo=True)           # usa (vecinas en la fila)
+flecha_horizontal_a_altura_fija("ListaEnlazada", "Nodo", 70, triangulo=True)  # usa (vecinas en la fila)
+flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="b", ld="t")       # herencia (Agenda queda arriba)
 
 flecha_entre("Franja", "AreaDeTrabajo", triangulo=True, lo="t", ld="b")       # tiene
 
