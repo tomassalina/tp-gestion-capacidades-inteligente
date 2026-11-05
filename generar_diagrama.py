@@ -10,15 +10,17 @@ ARCHIVOS = [
 ]
 
 # Atributos que son, ellos mismos, una estructura de datos de la materia (se subrayan)
+# (el tipo real de cada uno ya se ve en TIPOS; aca solo se marca cuales
+# subrayar por ser, ellos mismos, una estructura de datos de la materia)
 ATRIBUTOS_ESTRUCTURA = {
-    ("Trabajador", "repertorio_habilidades"): "set",
-    ("Trabajador", "atributos"): "dict (**kwargs)",
-    ("Trabajador", "agenda"): "Agenda (lista enlazada)",
-    ("Sistema", "trabajadores_por_id"): "dict",
-    ("Sistema", "solicitudes_pendientes"): "Cola",
-    ("Sistema", "ocupacion"): "dict + tupla como clave",
-    ("Sistema", "bitacora"): "list de tuplas",
-    ("AreaDeTrabajo", "franjas_por_nombre"): "dict",
+    ("Trabajador", "repertorio_habilidades"),
+    ("Trabajador", "atributos"),
+    ("Trabajador", "agenda"),
+    ("Sistema", "trabajadores_por_id"),
+    ("Sistema", "solicitudes_pendientes"),
+    ("Sistema", "ocupacion"),
+    ("Sistema", "bitacora"),
+    ("AreaDeTrabajo", "franjas_por_nombre"),
 }
 CLASES_ESTRUCTURA = {"Nodo", "Cola", "ListaEnlazada", "Agenda"}
 
@@ -28,13 +30,62 @@ CONSTANTES_DE_CLASE = {
     "TipoAccionBitacora": ["Propuesta", "Aprobacion", "Reversion"],
 }
 
-# Atributos cuyo valor sale de una clase de constantes (no es un Enum real de
-# Python, la catedra no lo enseña asi; es "como un enum" por convencion propia)
-ATRIBUTOS_PSEUDO_ENUM = {
-    ("HabilidadDeTrabajador", "nivel"): "como un enum: Basico=1, Intermedio=2, Avanzado=3",
-    ("HabilidadRequerida", "nivel_minimo"): "como un enum: Basico=1, Intermedio=2, Avanzado=3",
-    ("Franja", "nombre"): "como un enum: Manana, Tarde, Noche",
-    ("Asignacion", "estado"): "como un enum: Automatica, Pendiente, Aprobada",
+# Tipo de cada atributo (la catedra no usa type hints en el codigo, pero el
+# diagrama si los muestra para que se entienda de un vistazo). Para los que
+# salen de una clase "como un enum" (constantes de clase, no un Enum real de
+# Python), el tipo es el nombre de esa clase + sus valores posibles.
+TIPOS = {
+    ("Habilidad", "nombre"): "str",
+    ("HabilidadDeTrabajador", "habilidad"): "Habilidad",
+    ("HabilidadDeTrabajador", "nivel"): "NivelHabilidad (Basico=1, Intermedio=2, Avanzado=3)",
+    ("HabilidadRequerida", "habilidad"): "Habilidad",
+    ("HabilidadRequerida", "nivel_minimo"): "NivelHabilidad (Basico=1, Intermedio=2, Avanzado=3)",
+    ("CredencialProfesional", "nombre"): "str",
+    ("CredencialProfesional", "fecha_obtencion"): "date",
+    ("CredencialProfesional", "fecha_caducidad"): "date",
+    ("Franja", "nombre"): "TipoFranja (Manana, Tarde, Noche)",
+    ("Franja", "capacidad"): "int",
+    ("Nodo", "dato"): "object",
+    ("Nodo", "siguiente"): "Nodo",
+    ("ListaEnlazada", "inicio"): "Nodo",
+    ("Cola", "inicio"): "Nodo",
+    ("Cola", "fin"): "Nodo",
+    ("Cola", "cantidad"): "int",
+    ("AreaDeTrabajo", "nombre"): "str",
+    ("AreaDeTrabajo", "credenciales_obligatorias"): "str[]",
+    ("AreaDeTrabajo", "franjas"): "Franja[]",
+    ("AreaDeTrabajo", "franjas_por_nombre"): "dict[str, Franja]",
+    ("Labor", "id"): "int",
+    ("Labor", "titulo"): "str",
+    ("Labor", "descripcion"): "str",
+    ("Labor", "duracion_horas"): "int",
+    ("Labor", "habilidades_requeridas"): "HabilidadRequerida[]",
+    ("Labor", "credenciales_requeridas"): "str[]",
+    ("Labor", "area"): "AreaDeTrabajo",
+    ("Trabajador", "id"): "int",
+    ("Trabajador", "nombre"): "str",
+    ("Trabajador", "habilidades"): "HabilidadDeTrabajador[]",
+    ("Trabajador", "repertorio_habilidades"): "set[str]",
+    ("Trabajador", "credenciales"): "CredencialProfesional[]",
+    ("Trabajador", "horas_maximas_semana"): "int",
+    ("Trabajador", "horas_asignadas"): "int",
+    ("Trabajador", "atributos"): "dict  (**kwargs)",
+    ("Trabajador", "agenda"): "Agenda",
+    ("Asignacion", "trabajador"): "Trabajador",
+    ("Asignacion", "labor"): "Labor",
+    ("Asignacion", "franja"): "Franja",
+    ("Asignacion", "fecha"): "date",
+    ("Asignacion", "estado"): "EstadoAsignacion (Automatica, Pendiente, Aprobada)",
+    ("Sistema", "trabajadores"): "Trabajador[]",
+    ("Sistema", "areas"): "AreaDeTrabajo[]",
+    ("Sistema", "labores"): "Labor[]",
+    ("Sistema", "solicitudes_pendientes"): "Cola",
+    ("Sistema", "asignaciones"): "Asignacion[]",
+    ("Sistema", "trabajadores_por_id"): "dict[int, Trabajador]",
+    ("Sistema", "ocupacion"): "dict[tupla, int]",
+    ("Sistema", "bitacora"): "list[tupla]",
+    ("RepositorioCSV", "ruta_archivo"): "str",
+    ("RepositorioCSV", "columnas"): "list[str]",
 }
 
 
@@ -164,10 +215,8 @@ def dibujar_clase(nombre, x, y, width):
     lineas = []
     for attr in c["atributos"]:
         subrayar = caja_estructura or (nombre, attr) in ATRIBUTOS_ESTRUCTURA
-        sufijo = f"  [{ATRIBUTOS_ESTRUCTURA[(nombre, attr)]}]" if (nombre, attr) in ATRIBUTOS_ESTRUCTURA else ""
-        if (nombre, attr) in ATRIBUTOS_PSEUDO_ENUM:
-            sufijo += f"  ({ATRIBUTOS_PSEUDO_ENUM[(nombre, attr)]})"
-        lineas.append((f"- {attr}{sufijo}", subrayar))
+        tipo = TIPOS.get((nombre, attr), "?")
+        lineas.append((f"- {attr}: {tipo}", subrayar))
 
     # metodos agrupados (conservando el orden original dentro de cada grupo):
     # 1) accesores get_/set_, 2) logica de negocio, 3) persistencia (CSV)
@@ -229,6 +278,26 @@ def flecha_horizontal_a_altura_fija(origen, destino, y, triangulo=False):
     elementos.append(flecha(x1, oy + y, x2, dy + y, triangulo=triangulo))
 
 
+def flecha_horizontal_entre_columnas(origen, destino, y_absoluto, triangulo=False):
+    # conecta dos cajas de columnas distintas a una altura fija en comun, asi
+    # queda perfectamente horizontal aunque las dos cajas tengan alturas y
+    # posiciones verticales totalmente distintas
+    ox, oy, ow, oh = cajas[origen]
+    dx, dy, dw, dh = cajas[destino]
+    x1 = ox + ow if dx > ox else ox
+    x2 = dx if dx > ox else dx + dw
+    elementos.append(flecha(x1, y_absoluto, x2, y_absoluto, triangulo=triangulo))
+
+
+def flecha_salteando(origen_abajo, destino_arriba, lado="r", triangulo=False):
+    # conecta dos cajas de la MISMA columna que no son vecinas directas, por
+    # el borde (no por el medio) para no cruzar la caja que queda en el medio
+    ox, oy, ow, oh = cajas[origen_abajo]
+    dx, dy, dw, dh = cajas[destino_arriba]
+    x = ox + ow if lado == "r" else ox
+    elementos.append(flecha(x, oy, x, dy + dh, triangulo=triangulo))
+
+
 # ---------------------------------------------------------------------------
 # Layout por columnas, igual topologia que diagrama_clases_v3 (misma posicion
 # relativa entre clases), pero con el contenido completo derivado del codigo
@@ -262,35 +331,38 @@ fin = max(fin, fin3, fin4)
 
 # ---------------------------------------------------------------------------
 # Clases "secundarias" (Nodo, Cola, ListaEnlazada, RepositorioCSV): todas
-# juntas, una fila horizontal debajo de todo. Cola y ListaEnlazada se alinean
-# por x con Nodo (que usan ambas) y Agenda (que hereda de ListaEnlazada), para
-# que esas flechas sigan siendo rectas.
+# juntas, una fila horizontal debajo de todo. Cola queda centrada bajo Sistema
+# (que la usa) y ListaEnlazada centrada bajo Agenda (que hereda de ella), asi
+# esas dos flechas verticales quedan rectas; Nodo pegado a Cola (horizontal).
 # ---------------------------------------------------------------------------
 y_sec = fin + 60
 ANCHO_SEC = 320
-x_lista = cajas["Agenda"][0] + (cajas["Agenda"][2] - ANCHO_SEC) / 2  # centrada bajo Agenda
-x_nodo = x_lista - ANCHO_SEC - 40
-x_cola = x_nodo - ANCHO_SEC - 40
+x_cola = cajas["Sistema"][0] + (cajas["Sistema"][2] - ANCHO_SEC) / 2    # centrada bajo Sistema
+x_nodo = x_cola - ANCHO_SEC - 40
+x_lista = cajas["Agenda"][0] + (cajas["Agenda"][2] - ANCHO_SEC) / 2     # centrada bajo Agenda
 x_repo = x_lista + ANCHO_SEC + 40
 
-dibujar_clase("Cola", x_cola, y_sec, ANCHO_SEC)
 dibujar_clase("Nodo", x_nodo, y_sec, ANCHO_SEC)
+dibujar_clase("Cola", x_cola, y_sec, ANCHO_SEC)
 dibujar_clase("ListaEnlazada", x_lista, y_sec, ANCHO_SEC)
 dibujar_clase("RepositorioCSV", x_repo, y_sec, ANCHO_SEC)
 fin = max(cajas[n][1] + cajas[n][3] for n in ["Cola", "Nodo", "ListaEnlazada", "RepositorioCSV"])
 
 # ---------------------------------------------------------------------------
-# Flechas: solo entre cajas adyacentes de la misma columna, asi quedan
-# verticales y cortas (sin cruzar el diagrama de punta a punta). El resto de
-# las relaciones ya se ve en el tipo de cada atributo (ej: "franja: Franja").
+# Flechas: entre cajas adyacentes (mismo lugar o misma fila/columna), para que
+# queden derechas y cortas. Las relaciones de "tiene un" que no se pueden
+# dibujar derechas ya se ven en el tipo de cada atributo (ej: "franja: Franja").
 # ---------------------------------------------------------------------------
 flecha_entre("Supervisor", "Trabajador", triangulo=True, lo="t", ld="b")       # herencia
 flecha_entre("Sistema", "Supervisor", lo="t", ld="b")                         # gestiona
+flecha_entre("Sistema", "Cola", lo="b", ld="t")                               # tiene (solicitudes_pendientes)
 
 flecha_entre("HabilidadDeTrabajador", "Habilidad", triangulo=True, lo="t", ld="b")
+flecha_salteando("HabilidadRequerida", "Habilidad", lado="r")                 # salta HabilidadDeTrabajador
 flecha_horizontal_a_altura_fija("Cola", "Nodo", 70, triangulo=True)           # usa (vecinas en la fila)
-flecha_horizontal_a_altura_fija("ListaEnlazada", "Nodo", 70, triangulo=True)  # usa (vecinas en la fila)
 flecha_entre("Agenda", "ListaEnlazada", triangulo=True, lo="b", ld="t")       # herencia (Agenda queda arriba)
+
+flecha_horizontal_entre_columnas("Trabajador", "Agenda", punto_de_borde(cajas["Agenda"], "l")[1])  # tiene
 
 flecha_entre("Franja", "AreaDeTrabajo", triangulo=True, lo="t", ld="b")       # tiene
 
