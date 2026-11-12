@@ -95,55 +95,73 @@ def guardar_grafico(fig, nombre_archivo):
 # ---------------------------------------------------------------------------
 
 def analizar_carga_laboral(trabajadores, labores, asignaciones):
-    horas_por_trabajador = {id_t: 0.0 for id_t in trabajadores}
-    labores_por_trabajador = {id_t: 0 for id_t in trabajadores}
-    for asignacion in asignaciones:
-        id_t = int(asignacion["trabajador_id"])
-        duracion = labores[int(asignacion["labor_id"])]["duracion_horas"]
-        horas_por_trabajador[id_t] += duracion
-        labores_por_trabajador[id_t] += 1
+    # horas_maximas_semana es un tope SEMANAL (se resetea cada semana, regla 12 del core).
+    # Sumar las horas de las ~1000 asignaciones de TODO el periodo (90 dias) y dividirlas
+    # por un tope de UNA sola semana da utilizaciones de cientos de % sin sentido: hay que
+    # repartir cada asignacion en la semana en la que ocurrio y comparar semana contra semana.
+    fechas = [date.fromisoformat(a["fecha"]) for a in asignaciones]
+    fecha_min = min(fechas)
+    n_semanas = max(1, (max(fechas) - fecha_min).days // 7 + 1)
 
     ids = list(trabajadores.keys())
-    horas = np.array([horas_por_trabajador[id_t] for id_t in ids])
-    maximas = np.array([trabajadores[id_t]["horas_maximas_semana"] for id_t in ids])
+    indice_por_id = {id_t: i for i, id_t in enumerate(ids)}
     categorias = np.array([trabajadores[id_t]["categoria"] for id_t in ids])
-    utilizacion = horas / maximas * 100
+    maximas = np.array([trabajadores[id_t]["horas_maximas_semana"] for id_t in ids])
 
-    sobrecargados = [
+    horas_matriz = np.zeros((len(ids), n_semanas))
+    for asignacion, fecha in zip(asignaciones, fechas):
+        id_t = int(asignacion["trabajador_id"])
+        semana = (fecha - fecha_min).days // 7
+        duracion = labores[int(asignacion["labor_id"])]["duracion_horas"]
+        horas_matriz[indice_por_id[id_t], semana] += duracion
+
+    utilizacion_semanal = horas_matriz / maximas[:, None] * 100  # (trabajadores x semanas)
+    utilizacion = utilizacion_semanal.mean(axis=1)  # promedio semanal por trabajador, en [0, 100]
+
+    sin_asignaciones = [trabajadores[id_t]["nombre"] for id_t in ids if horas_matriz[indice_por_id[id_t]].sum() == 0]
+    alta_utilizacion = [
         (trabajadores[id_t]["nombre"], round(util, 1))
-        for id_t, util in zip(ids, utilizacion) if util > 100
+        for id_t, util in zip(ids, utilizacion) if util >= 80
     ]
     subutilizados_pct = float(np.mean(utilizacion < 30) * 100)
+    sin_asignaciones_pct = len(sin_asignaciones) / len(ids) * 100
 
     print("=== Ejercicio 1: Carga laboral ===")
-    print(f"Utilizacion promedio: {utilizacion.mean():.1f}% | mediana: {np.median(utilizacion):.1f}% | desvio: {utilizacion.std():.1f}")
-    print(f"Trabajadores sobrecargados (>100%): {len(sobrecargados)} de {len(ids)}")
-    print(f"Trabajadores subutilizados (<30%): {subutilizados_pct:.1f}%")
+    print(f"Periodo simulado: {n_semanas} semanas")
+    print(f"Utilizacion semanal promedio: {utilizacion.mean():.1f}% | mediana: {np.median(utilizacion):.1f}% | desvio: {utilizacion.std():.1f}")
+    print(f"Trabajadores sin ninguna asignacion en todo el periodo: {len(sin_asignaciones)} de {len(ids)} ({sin_asignaciones_pct:.1f}%)")
+    print(f"Trabajadores con uso sostenido alto (>=80% promedio semanal): {len(alta_utilizacion)}")
+    print(f"Trabajadores subutilizados (<30% promedio semanal): {subutilizados_pct:.1f}%")
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.hist(utilizacion, bins=20, color="#4C72B0", edgecolor="white")
-    ax.axvline(100, color="#C44E52", linestyle="--", linewidth=1.5, label="Capacidad maxima (100%)")
-    ax.set_title("Distribucion de utilizacion de capacidad por trabajador")
-    ax.set_xlabel("% de utilizacion (horas asignadas / horas maximas semanales)")
+    ax.axvline(80, color="#C44E52", linestyle="--", linewidth=1.5, label="Uso sostenido alto (80%)")
+    ax.set_title("Distribucion de utilizacion semanal promedio por trabajador")
+    ax.set_xlabel(f"% de utilizacion semanal promedio en {n_semanas} semanas (horas/semana / horas maximas)")
     ax.set_ylabel("Cantidad de trabajadores")
+    ax.set_xlim(0, 100)
     ax.legend()
     ruta_hist = guardar_grafico(fig, "01_histograma_utilizacion.png")
 
     datos_boxplot = [utilizacion[categorias == categoria] for categoria in ORDEN_CATEGORIAS]
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.boxplot(datos_boxplot, tick_labels=ORDEN_CATEGORIAS, showmeans=True)
-    ax.axhline(100, color="#C44E52", linestyle="--", linewidth=1, label="Capacidad maxima (100%)")
-    ax.set_title("Utilizacion de capacidad por categoria de trabajador")
-    ax.set_ylabel("% de utilizacion")
+    ax.axhline(80, color="#C44E52", linestyle="--", linewidth=1, label="Uso sostenido alto (80%)")
+    ax.set_title("Utilizacion semanal promedio por categoria de trabajador")
+    ax.set_ylabel("% de utilizacion semanal promedio")
+    ax.set_ylim(0, 100)
     ax.legend()
     ruta_boxplot = guardar_grafico(fig, "02_boxplot_categoria.png")
 
     return {
+        "n_semanas_simuladas": n_semanas,
         "utilizacion_promedio": round(float(utilizacion.mean()), 1),
         "utilizacion_mediana": round(float(np.median(utilizacion)), 1),
         "utilizacion_desvio": round(float(utilizacion.std()), 1),
-        "cantidad_sobrecargados": len(sobrecargados),
-        "top_sobrecargados": sorted(sobrecargados, key=lambda par: -par[1])[:5],
+        "cantidad_sin_asignaciones": len(sin_asignaciones),
+        "porcentaje_sin_asignaciones": round(sin_asignaciones_pct, 1),
+        "cantidad_alta_utilizacion": len(alta_utilizacion),
+        "top_alta_utilizacion": sorted(alta_utilizacion, key=lambda par: -par[1])[:5],
         "porcentaje_subutilizados": round(subutilizados_pct, 1),
         "graficos": [ruta_hist, ruta_boxplot],
     }
@@ -193,14 +211,22 @@ def analizar_credenciales(trabajadores, conflictos, asignaciones):
         ax.text(i, valor, str(valor), ha="center", va="bottom")
     ruta_barras = guardar_grafico(fig, "03_barras_credenciales.png")
 
-    fig, ax = plt.subplots(figsize=(7, 5))
-    _, _, autotextos = ax.pie(conteos_conflicto, autopct="%1.1f%%", startangle=90, pctdistance=0.8)
-    for autotexto in autotextos:
-        autotexto.set_color("white")
-        autotexto.set_fontweight("bold")
+    orden_desc = np.argsort(conteos_conflicto)  # barh dibuja de abajo hacia arriba
+    tipos_ordenados = tipos_conflicto[orden_desc]
+    conteos_ordenados = conteos_conflicto[orden_desc]
+    porcentajes_ordenados = conteos_ordenados / conteos_ordenados.sum() * 100
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    barras = ax.barh(tipos_ordenados, conteos_ordenados, color="#C44E52")
+    for barra, cantidad, porcentaje in zip(barras, conteos_ordenados, porcentajes_ordenados):
+        ax.text(
+            barra.get_width() + max(conteos_ordenados) * 0.01, barra.get_y() + barra.get_height() / 2,
+            f"{cantidad} ({porcentaje:.1f}%)", va="center", fontsize=10,
+        )
     ax.set_title("Causas de rechazo de asignaciones")
-    ax.legend(tipos_conflicto, loc="upper left", bbox_to_anchor=(1, 1), title="Motivo")
-    ruta_torta = guardar_grafico(fig, "04_torta_causas_rechazo.png")
+    ax.set_xlabel("Cantidad de conflictos")
+    ax.set_xlim(0, max(conteos_ordenados) * 1.22)
+    ruta_causas = guardar_grafico(fig, "04_barras_causas_rechazo.png")
 
     return {
         "credenciales_activas": activas,
@@ -208,7 +234,7 @@ def analizar_credenciales(trabajadores, conflictos, asignaciones):
         "porcentaje_activas": round(activas / total_credenciales * 100, 1),
         "porcentaje_rechazo_por_credencial": round(porcentaje_rechazo_credencial, 1),
         "ranking_credenciales": ranking_credenciales,
-        "graficos": [ruta_barras, ruta_torta],
+        "graficos": [ruta_barras, ruta_causas],
     }
 
 

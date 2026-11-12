@@ -7,33 +7,15 @@
     "conflictos": 339
   },
   "carga_laboral": {
-    "utilizacion_promedio": 63.6,
-    "utilizacion_mediana": 11.8,
-    "utilizacion_desvio": 122.1,
-    "cantidad_sobrecargados": 37,
-    "top_sobrecargados": [
-      [
-        "Trabajador 095",
-        675.1
-      ],
-      [
-        "Trabajador 024",
-        578.6
-      ],
-      [
-        "Trabajador 159",
-        539.8
-      ],
-      [
-        "Trabajador 080",
-        521.2
-      ],
-      [
-        "Trabajador 087",
-        517.5
-      ]
-    ],
-    "porcentaje_subutilizados": 63.5,
+    "n_semanas_simuladas": 12,
+    "utilizacion_promedio": 5.3,
+    "utilizacion_mediana": 1.0,
+    "utilizacion_desvio": 10.2,
+    "cantidad_sin_asignaciones": 86,
+    "porcentaje_sin_asignaciones": 43.0,
+    "cantidad_alta_utilizacion": 0,
+    "top_alta_utilizacion": [],
+    "porcentaje_subutilizados": 95.0,
     "graficos": [
       "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\01_histograma_utilizacion.png",
       "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\02_boxplot_categoria.png"
@@ -72,7 +54,7 @@
     ],
     "graficos": [
       "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\03_barras_credenciales.png",
-      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\04_torta_causas_rechazo.png"
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\04_barras_causas_rechazo.png"
     ]
   },
   "franjas_areas": {
