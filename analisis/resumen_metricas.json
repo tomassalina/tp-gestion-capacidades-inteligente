@@ -1,0 +1,88 @@
+{
+  "dataset": {
+    "trabajadores": 200,
+    "labores": 150,
+    "areas": 6,
+    "asignaciones": 1000,
+    "conflictos": 339
+  },
+  "carga_laboral": {
+    "utilizacion_promedio": 63.6,
+    "utilizacion_mediana": 11.8,
+    "utilizacion_desvio": 122.1,
+    "cantidad_sobrecargados": 37,
+    "top_sobrecargados": [
+      [
+        "Trabajador 095",
+        675.1
+      ],
+      [
+        "Trabajador 024",
+        578.6
+      ],
+      [
+        "Trabajador 159",
+        539.8
+      ],
+      [
+        "Trabajador 080",
+        521.2
+      ],
+      [
+        "Trabajador 087",
+        517.5
+      ]
+    ],
+    "porcentaje_subutilizados": 63.5,
+    "graficos": [
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\01_histograma_utilizacion.png",
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\02_boxplot_categoria.png"
+    ]
+  },
+  "credenciales": {
+    "credenciales_activas": 429,
+    "credenciales_vencidas": 100,
+    "porcentaje_activas": 81.1,
+    "porcentaje_rechazo_por_credencial": 1.7,
+    "ranking_credenciales": [
+      [
+        "Trabajo en Altura",
+        92
+      ],
+      [
+        "CCNA",
+        91
+      ],
+      [
+        "Sustancias Peligrosas",
+        89
+      ],
+      [
+        "Redes Industriales",
+        88
+      ],
+      [
+        "Seguridad Electrica Nivel 3",
+        85
+      ],
+      [
+        "Operador de Robots",
+        84
+      ]
+    ],
+    "graficos": [
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\03_barras_credenciales.png",
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\04_torta_causas_rechazo.png"
+    ]
+  },
+  "franjas_areas": {
+    "ocupacion_promedio": 14.2,
+    "combinacion_mas_saturada": "Planta Robotica / Tarde",
+    "ocupacion_mas_saturada": 32.5,
+    "rechazos_por_franja_completa": 3,
+    "graficos": [
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\05_heatmap_area_franja.png",
+      "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\06_barras_rechazos_franja.png"
+    ]
+  }
+}

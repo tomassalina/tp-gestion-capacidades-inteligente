@@ -209,3 +209,8 @@ __marimo__/
 
 # Datos persistidos en CSV (se generan solos con Sistema.guardar_todo)
 /data/
+
+# Archivos de bloqueo temporales de PowerPoint/Office al tener un .pptx abierto
+~$*.pptx
+~$*.docx
+~$*.xlsx

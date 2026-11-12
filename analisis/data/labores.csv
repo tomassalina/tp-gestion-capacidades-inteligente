@@ -1,0 +1,151 @@
+id,titulo,descripcion,duracion_horas,habilidades_requeridas,credenciales_requeridas,area
+1,Alta Tension - Tarea 1,Labor operativa #1 del area Alta Tension,1.6,Redes Industriales:2,,Alta Tension
+2,Planta Robotica - Tarea 2,Labor operativa #2 del area Planta Robotica,1.9,Electricidad Industrial:2;Logistica de Almacen:1,Sustancias Peligrosas;Operador de Robots,Planta Robotica
+3,Laboratorio Industrial - Tarea 3,Labor operativa #3 del area Laboratorio Industrial,5.0,Seguridad en Alturas:2,Operador de Robots;CCNA,Laboratorio Industrial
+4,Planta Quimica - Tarea 4,Labor operativa #4 del area Planta Quimica,6.4,Soldadura:3,,Planta Quimica
+5,Planta Robotica - Tarea 5,Labor operativa #5 del area Planta Robotica,5.4,Programacion PLC:2,Sustancias Peligrosas,Planta Robotica
+6,Alta Tension - Tarea 6,Labor operativa #6 del area Alta Tension,5.7,Electricidad Industrial:2,,Alta Tension
+7,Planta Quimica - Tarea 7,Labor operativa #7 del area Planta Quimica,4.2,Mecanizado CNC:3;Programacion PLC:1;Logistica de Almacen:3,Trabajo en Altura;Redes Industriales,Planta Quimica
+8,Alta Tension - Tarea 8,Labor operativa #8 del area Alta Tension,6.8,Supervision de Planta:3;Seguridad en Alturas:2;Redes Industriales:1,,Alta Tension
+9,Alta Tension - Tarea 9,Labor operativa #9 del area Alta Tension,5.6,Quimica Analitica:1;Programacion PLC:3,CCNA;Trabajo en Altura,Alta Tension
+10,Laboratorio Industrial - Tarea 10,Labor operativa #10 del area Laboratorio Industrial,6.2,Calibracion de Equipos:1;Manejo de Robots:1;Quimica Analitica:3,Operador de Robots;CCNA,Laboratorio Industrial
+11,Laboratorio Industrial - Tarea 11,Labor operativa #11 del area Laboratorio Industrial,6.3,Manejo de Grua:1;Electricidad Industrial:3;Redes Industriales:2,,Laboratorio Industrial
+12,Planta Robotica - Tarea 12,Labor operativa #12 del area Planta Robotica,1.4,Mecanizado CNC:1,Sustancias Peligrosas;Operador de Robots,Planta Robotica
+13,Laboratorio Industrial - Tarea 13,Labor operativa #13 del area Laboratorio Industrial,6.3,Calibracion de Equipos:3;Seguridad en Alturas:1;Quimica Analitica:3,Seguridad Electrica Nivel 3;Operador de Robots,Laboratorio Industrial
+14,Planta Quimica - Tarea 14,Labor operativa #14 del area Planta Quimica,7.7,Programacion PLC:2;Quimica Analitica:1,Seguridad Electrica Nivel 3,Planta Quimica
+15,Planta Quimica - Tarea 15,Labor operativa #15 del area Planta Quimica,5.3,Seguridad en Alturas:3;Manejo de Robots:1,CCNA;Operador de Robots,Planta Quimica
+16,Centro de Datos - Tarea 16,Labor operativa #16 del area Centro de Datos,1.1,Manejo de Robots:3;Seguridad en Alturas:1,CCNA;Sustancias Peligrosas,Centro de Datos
+17,Alta Tension - Tarea 17,Labor operativa #17 del area Alta Tension,1.6,Redes Industriales:1;Soldadura:3,,Alta Tension
+18,Laboratorio Industrial - Tarea 18,Labor operativa #18 del area Laboratorio Industrial,5.6,Seguridad en Alturas:1,,Laboratorio Industrial
+19,Centro Logistico - Tarea 19,Labor operativa #19 del area Centro Logistico,7.5,Quimica Analitica:3,Sustancias Peligrosas;Trabajo en Altura,Centro Logistico
+20,Planta Quimica - Tarea 20,Labor operativa #20 del area Planta Quimica,4.2,Redes Industriales:3;Quimica Analitica:3;Manejo de Grua:2,Operador de Robots,Planta Quimica
+21,Centro de Datos - Tarea 21,Labor operativa #21 del area Centro de Datos,5.1,Programacion PLC:2,,Centro de Datos
+22,Centro de Datos - Tarea 22,Labor operativa #22 del area Centro de Datos,1.5,Redes Industriales:3;Soldadura:3;Programacion PLC:1,,Centro de Datos
+23,Planta Robotica - Tarea 23,Labor operativa #23 del area Planta Robotica,4.8,Programacion PLC:1;Seguridad en Alturas:2,Sustancias Peligrosas;Trabajo en Altura,Planta Robotica
+24,Planta Quimica - Tarea 24,Labor operativa #24 del area Planta Quimica,1.7,Logistica de Almacen:2;Calibracion de Equipos:2;Redes Industriales:1,,Planta Quimica
+25,Laboratorio Industrial - Tarea 25,Labor operativa #25 del area Laboratorio Industrial,5.7,Manejo de Grua:2;Supervision de Planta:3,,Laboratorio Industrial
+26,Planta Quimica - Tarea 26,Labor operativa #26 del area Planta Quimica,2.7,Soldadura:2,CCNA;Seguridad Electrica Nivel 3,Planta Quimica
+27,Centro de Datos - Tarea 27,Labor operativa #27 del area Centro de Datos,7.1,Calibracion de Equipos:1;Manejo de Robots:2;Manejo de Grua:2,,Centro de Datos
+28,Planta Robotica - Tarea 28,Labor operativa #28 del area Planta Robotica,7.5,Seguridad en Alturas:1;Programacion PLC:3,Seguridad Electrica Nivel 3;Redes Industriales,Planta Robotica
+29,Centro de Datos - Tarea 29,Labor operativa #29 del area Centro de Datos,7.1,Manejo de Grua:2,Trabajo en Altura,Centro de Datos
+30,Planta Robotica - Tarea 30,Labor operativa #30 del area Planta Robotica,7.5,Manejo de Grua:1,CCNA,Planta Robotica
+31,Laboratorio Industrial - Tarea 31,Labor operativa #31 del area Laboratorio Industrial,2.3,Manejo de Grua:3;Seguridad en Alturas:3,Trabajo en Altura,Laboratorio Industrial
+32,Centro de Datos - Tarea 32,Labor operativa #32 del area Centro de Datos,1.4,Logistica de Almacen:3,Seguridad Electrica Nivel 3;CCNA,Centro de Datos
+33,Centro Logistico - Tarea 33,Labor operativa #33 del area Centro Logistico,1.5,Seguridad en Alturas:1;Supervision de Planta:1,Seguridad Electrica Nivel 3;Trabajo en Altura,Centro Logistico
+34,Planta Robotica - Tarea 34,Labor operativa #34 del area Planta Robotica,1.6,Redes Industriales:3;Manejo de Grua:1;Programacion PLC:3,Seguridad Electrica Nivel 3;Operador de Robots,Planta Robotica
+35,Planta Quimica - Tarea 35,Labor operativa #35 del area Planta Quimica,2.9,Logistica de Almacen:2;Seguridad en Alturas:1;Electricidad Industrial:3,CCNA;Trabajo en Altura,Planta Quimica
+36,Centro de Datos - Tarea 36,Labor operativa #36 del area Centro de Datos,8.0,Mecanizado CNC:2;Quimica Analitica:1;Calibracion de Equipos:1,Operador de Robots,Centro de Datos
+37,Planta Robotica - Tarea 37,Labor operativa #37 del area Planta Robotica,7.5,Seguridad en Alturas:1,CCNA;Trabajo en Altura,Planta Robotica
+38,Planta Robotica - Tarea 38,Labor operativa #38 del area Planta Robotica,4.1,Electricidad Industrial:2,,Planta Robotica
+39,Centro Logistico - Tarea 39,Labor operativa #39 del area Centro Logistico,1.7,Quimica Analitica:1;Logistica de Almacen:3;Seguridad en Alturas:3,Redes Industriales,Centro Logistico
+40,Centro de Datos - Tarea 40,Labor operativa #40 del area Centro de Datos,2.9,Programacion PLC:3;Supervision de Planta:3,,Centro de Datos
+41,Centro Logistico - Tarea 41,Labor operativa #41 del area Centro Logistico,5.8,Supervision de Planta:2,,Centro Logistico
+42,Alta Tension - Tarea 42,Labor operativa #42 del area Alta Tension,1.0,Calibracion de Equipos:1;Quimica Analitica:3;Soldadura:2,Seguridad Electrica Nivel 3,Alta Tension
+43,Centro de Datos - Tarea 43,Labor operativa #43 del area Centro de Datos,1.5,Quimica Analitica:3;Manejo de Robots:3;Calibracion de Equipos:2,Seguridad Electrica Nivel 3;Redes Industriales,Centro de Datos
+44,Planta Quimica - Tarea 44,Labor operativa #44 del area Planta Quimica,4.9,Seguridad en Alturas:1,Operador de Robots,Planta Quimica
+45,Laboratorio Industrial - Tarea 45,Labor operativa #45 del area Laboratorio Industrial,7.3,Soldadura:2,Seguridad Electrica Nivel 3,Laboratorio Industrial
+46,Centro de Datos - Tarea 46,Labor operativa #46 del area Centro de Datos,7.5,Redes Industriales:2;Mecanizado CNC:3;Programacion PLC:2,Redes Industriales;Trabajo en Altura,Centro de Datos
+47,Centro de Datos - Tarea 47,Labor operativa #47 del area Centro de Datos,2.3,Manejo de Robots:2,,Centro de Datos
+48,Alta Tension - Tarea 48,Labor operativa #48 del area Alta Tension,7.1,Mecanizado CNC:2;Redes Industriales:1,Seguridad Electrica Nivel 3;Sustancias Peligrosas,Alta Tension
+49,Laboratorio Industrial - Tarea 49,Labor operativa #49 del area Laboratorio Industrial,6.7,Redes Industriales:2,CCNA,Laboratorio Industrial
+50,Centro de Datos - Tarea 50,Labor operativa #50 del area Centro de Datos,3.8,Soldadura:3,,Centro de Datos
+51,Alta Tension - Tarea 51,Labor operativa #51 del area Alta Tension,5.8,Quimica Analitica:2,Operador de Robots;Sustancias Peligrosas,Alta Tension
+52,Centro Logistico - Tarea 52,Labor operativa #52 del area Centro Logistico,1.8,Soldadura:2;Programacion PLC:1,CCNA;Seguridad Electrica Nivel 3,Centro Logistico
+53,Laboratorio Industrial - Tarea 53,Labor operativa #53 del area Laboratorio Industrial,7.3,Supervision de Planta:2;Electricidad Industrial:3,Seguridad Electrica Nivel 3;Sustancias Peligrosas,Laboratorio Industrial
+54,Centro de Datos - Tarea 54,Labor operativa #54 del area Centro de Datos,3.5,Soldadura:1;Manejo de Grua:3,Redes Industriales;Trabajo en Altura,Centro de Datos
+55,Planta Robotica - Tarea 55,Labor operativa #55 del area Planta Robotica,3.2,Electricidad Industrial:3;Logistica de Almacen:1;Supervision de Planta:3,Operador de Robots,Planta Robotica
+56,Laboratorio Industrial - Tarea 56,Labor operativa #56 del area Laboratorio Industrial,3.9,Manejo de Grua:3;Quimica Analitica:1,,Laboratorio Industrial
+57,Laboratorio Industrial - Tarea 57,Labor operativa #57 del area Laboratorio Industrial,3.0,Supervision de Planta:3;Manejo de Robots:2;Logistica de Almacen:2,Seguridad Electrica Nivel 3;CCNA,Laboratorio Industrial
+58,Laboratorio Industrial - Tarea 58,Labor operativa #58 del area Laboratorio Industrial,4.3,Logistica de Almacen:2;Mecanizado CNC:2;Electricidad Industrial:2,Trabajo en Altura;Operador de Robots,Laboratorio Industrial
+59,Planta Quimica - Tarea 59,Labor operativa #59 del area Planta Quimica,5.6,Mecanizado CNC:1,Operador de Robots,Planta Quimica
+60,Centro Logistico - Tarea 60,Labor operativa #60 del area Centro Logistico,6.6,Programacion PLC:3;Redes Industriales:2,,Centro Logistico
+61,Centro de Datos - Tarea 61,Labor operativa #61 del area Centro de Datos,6.9,Soldadura:1,Operador de Robots,Centro de Datos
+62,Planta Robotica - Tarea 62,Labor operativa #62 del area Planta Robotica,4.5,Manejo de Grua:3;Mecanizado CNC:1,Redes Industriales;Sustancias Peligrosas,Planta Robotica
+63,Centro de Datos - Tarea 63,Labor operativa #63 del area Centro de Datos,7.2,Mecanizado CNC:3,,Centro de Datos
+64,Planta Robotica - Tarea 64,Labor operativa #64 del area Planta Robotica,4.9,Redes Industriales:3;Manejo de Robots:3,Seguridad Electrica Nivel 3,Planta Robotica
+65,Planta Robotica - Tarea 65,Labor operativa #65 del area Planta Robotica,7.7,Manejo de Robots:3;Calibracion de Equipos:3,Operador de Robots;CCNA,Planta Robotica
+66,Laboratorio Industrial - Tarea 66,Labor operativa #66 del area Laboratorio Industrial,2.8,Supervision de Planta:3;Seguridad en Alturas:2;Manejo de Grua:1,Sustancias Peligrosas;Redes Industriales,Laboratorio Industrial
+67,Centro de Datos - Tarea 67,Labor operativa #67 del area Centro de Datos,6.0,Quimica Analitica:3;Seguridad en Alturas:1;Calibracion de Equipos:2,Seguridad Electrica Nivel 3,Centro de Datos
+68,Centro de Datos - Tarea 68,Labor operativa #68 del area Centro de Datos,2.1,Electricidad Industrial:3;Supervision de Planta:1,,Centro de Datos
+69,Laboratorio Industrial - Tarea 69,Labor operativa #69 del area Laboratorio Industrial,1.4,Manejo de Robots:2;Redes Industriales:2;Programacion PLC:2,Sustancias Peligrosas;Redes Industriales,Laboratorio Industrial
+70,Laboratorio Industrial - Tarea 70,Labor operativa #70 del area Laboratorio Industrial,7.6,Logistica de Almacen:3;Soldadura:2,Seguridad Electrica Nivel 3,Laboratorio Industrial
+71,Alta Tension - Tarea 71,Labor operativa #71 del area Alta Tension,4.4,Manejo de Grua:3;Seguridad en Alturas:3,Operador de Robots;Trabajo en Altura,Alta Tension
+72,Alta Tension - Tarea 72,Labor operativa #72 del area Alta Tension,6.1,Calibracion de Equipos:2;Soldadura:2,Redes Industriales;Sustancias Peligrosas,Alta Tension
+73,Laboratorio Industrial - Tarea 73,Labor operativa #73 del area Laboratorio Industrial,7.3,Logistica de Almacen:3,,Laboratorio Industrial
+74,Centro Logistico - Tarea 74,Labor operativa #74 del area Centro Logistico,1.4,Mecanizado CNC:3;Soldadura:2;Programacion PLC:1,Trabajo en Altura,Centro Logistico
+75,Laboratorio Industrial - Tarea 75,Labor operativa #75 del area Laboratorio Industrial,6.3,Redes Industriales:2;Calibracion de Equipos:2,CCNA,Laboratorio Industrial
+76,Laboratorio Industrial - Tarea 76,Labor operativa #76 del area Laboratorio Industrial,2.6,Programacion PLC:1;Calibracion de Equipos:3,Seguridad Electrica Nivel 3;CCNA,Laboratorio Industrial
+77,Planta Robotica - Tarea 77,Labor operativa #77 del area Planta Robotica,2.7,Soldadura:1;Supervision de Planta:1;Redes Industriales:3,,Planta Robotica
+78,Laboratorio Industrial - Tarea 78,Labor operativa #78 del area Laboratorio Industrial,5.2,Programacion PLC:2;Logistica de Almacen:3;Redes Industriales:2,Trabajo en Altura,Laboratorio Industrial
+79,Planta Quimica - Tarea 79,Labor operativa #79 del area Planta Quimica,5.7,Programacion PLC:1;Manejo de Robots:3;Quimica Analitica:1,Operador de Robots,Planta Quimica
+80,Laboratorio Industrial - Tarea 80,Labor operativa #80 del area Laboratorio Industrial,1.7,Supervision de Planta:1;Redes Industriales:3,Redes Industriales;Trabajo en Altura,Laboratorio Industrial
+81,Alta Tension - Tarea 81,Labor operativa #81 del area Alta Tension,3.6,Logistica de Almacen:1;Programacion PLC:2;Supervision de Planta:3,Redes Industriales,Alta Tension
+82,Centro Logistico - Tarea 82,Labor operativa #82 del area Centro Logistico,7.2,Electricidad Industrial:2;Soldadura:1;Manejo de Grua:2,Redes Industriales,Centro Logistico
+83,Laboratorio Industrial - Tarea 83,Labor operativa #83 del area Laboratorio Industrial,6.7,Manejo de Robots:3;Manejo de Grua:3;Supervision de Planta:3,Operador de Robots,Laboratorio Industrial
+84,Centro Logistico - Tarea 84,Labor operativa #84 del area Centro Logistico,7.0,Calibracion de Equipos:3;Manejo de Grua:3,CCNA,Centro Logistico
+85,Planta Robotica - Tarea 85,Labor operativa #85 del area Planta Robotica,3.4,Calibracion de Equipos:2;Redes Industriales:3,Redes Industriales;Sustancias Peligrosas,Planta Robotica
+86,Laboratorio Industrial - Tarea 86,Labor operativa #86 del area Laboratorio Industrial,3.0,Manejo de Robots:1;Calibracion de Equipos:2,CCNA,Laboratorio Industrial
+87,Centro Logistico - Tarea 87,Labor operativa #87 del area Centro Logistico,6.0,Quimica Analitica:3;Seguridad en Alturas:1;Soldadura:1,,Centro Logistico
+88,Laboratorio Industrial - Tarea 88,Labor operativa #88 del area Laboratorio Industrial,3.8,Redes Industriales:2;Calibracion de Equipos:1;Mecanizado CNC:1,Trabajo en Altura,Laboratorio Industrial
+89,Centro de Datos - Tarea 89,Labor operativa #89 del area Centro de Datos,4.0,Mecanizado CNC:2;Logistica de Almacen:2,Operador de Robots;CCNA,Centro de Datos
+90,Planta Quimica - Tarea 90,Labor operativa #90 del area Planta Quimica,1.8,Electricidad Industrial:2;Supervision de Planta:2;Calibracion de Equipos:2,,Planta Quimica
+91,Centro de Datos - Tarea 91,Labor operativa #91 del area Centro de Datos,2.5,Programacion PLC:3;Seguridad en Alturas:1,,Centro de Datos
+92,Laboratorio Industrial - Tarea 92,Labor operativa #92 del area Laboratorio Industrial,6.8,Supervision de Planta:3;Logistica de Almacen:3,Seguridad Electrica Nivel 3,Laboratorio Industrial
+93,Alta Tension - Tarea 93,Labor operativa #93 del area Alta Tension,6.0,Electricidad Industrial:1,Seguridad Electrica Nivel 3,Alta Tension
+94,Centro de Datos - Tarea 94,Labor operativa #94 del area Centro de Datos,1.7,Soldadura:3;Supervision de Planta:2,Trabajo en Altura;Sustancias Peligrosas,Centro de Datos
+95,Planta Robotica - Tarea 95,Labor operativa #95 del area Planta Robotica,2.8,Quimica Analitica:2;Calibracion de Equipos:2;Mecanizado CNC:1,,Planta Robotica
+96,Laboratorio Industrial - Tarea 96,Labor operativa #96 del area Laboratorio Industrial,5.0,Programacion PLC:2,Seguridad Electrica Nivel 3,Laboratorio Industrial
+97,Planta Quimica - Tarea 97,Labor operativa #97 del area Planta Quimica,8.0,Manejo de Robots:1,CCNA;Seguridad Electrica Nivel 3,Planta Quimica
+98,Planta Robotica - Tarea 98,Labor operativa #98 del area Planta Robotica,7.4,Manejo de Grua:3;Logistica de Almacen:1;Mecanizado CNC:3,Sustancias Peligrosas,Planta Robotica
+99,Alta Tension - Tarea 99,Labor operativa #99 del area Alta Tension,5.4,Manejo de Grua:3;Quimica Analitica:1;Logistica de Almacen:3,Seguridad Electrica Nivel 3;Trabajo en Altura,Alta Tension
+100,Alta Tension - Tarea 100,Labor operativa #100 del area Alta Tension,1.0,Programacion PLC:1;Manejo de Robots:3;Redes Industriales:1,,Alta Tension
+101,Laboratorio Industrial - Tarea 101,Labor operativa #101 del area Laboratorio Industrial,1.5,Logistica de Almacen:1;Calibracion de Equipos:1;Quimica Analitica:2,CCNA;Sustancias Peligrosas,Laboratorio Industrial
+102,Centro de Datos - Tarea 102,Labor operativa #102 del area Centro de Datos,4.8,Mecanizado CNC:3;Logistica de Almacen:1,Seguridad Electrica Nivel 3,Centro de Datos
+103,Planta Quimica - Tarea 103,Labor operativa #103 del area Planta Quimica,1.4,Quimica Analitica:1,,Planta Quimica
+104,Alta Tension - Tarea 104,Labor operativa #104 del area Alta Tension,7.6,Supervision de Planta:2;Logistica de Almacen:1;Quimica Analitica:2,CCNA;Sustancias Peligrosas,Alta Tension
+105,Centro Logistico - Tarea 105,Labor operativa #105 del area Centro Logistico,2.8,Calibracion de Equipos:3;Supervision de Planta:1;Programacion PLC:2,CCNA;Operador de Robots,Centro Logistico
+106,Planta Robotica - Tarea 106,Labor operativa #106 del area Planta Robotica,5.0,Mecanizado CNC:3,Seguridad Electrica Nivel 3;CCNA,Planta Robotica
+107,Centro de Datos - Tarea 107,Labor operativa #107 del area Centro de Datos,8.0,Seguridad en Alturas:2;Mecanizado CNC:2,,Centro de Datos
+108,Laboratorio Industrial - Tarea 108,Labor operativa #108 del area Laboratorio Industrial,1.7,Calibracion de Equipos:2;Programacion PLC:2;Supervision de Planta:2,Redes Industriales,Laboratorio Industrial
+109,Centro de Datos - Tarea 109,Labor operativa #109 del area Centro de Datos,1.3,Manejo de Grua:2;Calibracion de Equipos:3,Operador de Robots,Centro de Datos
+110,Planta Robotica - Tarea 110,Labor operativa #110 del area Planta Robotica,4.2,Quimica Analitica:1;Electricidad Industrial:2,Seguridad Electrica Nivel 3;Operador de Robots,Planta Robotica
+111,Planta Robotica - Tarea 111,Labor operativa #111 del area Planta Robotica,6.3,Seguridad en Alturas:2,Sustancias Peligrosas;Redes Industriales,Planta Robotica
+112,Centro de Datos - Tarea 112,Labor operativa #112 del area Centro de Datos,1.2,Seguridad en Alturas:2;Manejo de Robots:2,Sustancias Peligrosas;Seguridad Electrica Nivel 3,Centro de Datos
+113,Planta Quimica - Tarea 113,Labor operativa #113 del area Planta Quimica,2.6,Redes Industriales:3;Manejo de Robots:1;Quimica Analitica:3,Seguridad Electrica Nivel 3,Planta Quimica
+114,Planta Robotica - Tarea 114,Labor operativa #114 del area Planta Robotica,5.9,Programacion PLC:1;Mecanizado CNC:2,CCNA;Operador de Robots,Planta Robotica
+115,Laboratorio Industrial - Tarea 115,Labor operativa #115 del area Laboratorio Industrial,3.7,Calibracion de Equipos:2;Redes Industriales:3,,Laboratorio Industrial
+116,Centro Logistico - Tarea 116,Labor operativa #116 del area Centro Logistico,3.0,Supervision de Planta:2;Manejo de Robots:2;Programacion PLC:2,CCNA;Seguridad Electrica Nivel 3,Centro Logistico
+117,Alta Tension - Tarea 117,Labor operativa #117 del area Alta Tension,3.3,Logistica de Almacen:1;Mecanizado CNC:2;Calibracion de Equipos:3,CCNA,Alta Tension
+118,Centro Logistico - Tarea 118,Labor operativa #118 del area Centro Logistico,5.0,Calibracion de Equipos:1;Electricidad Industrial:3,,Centro Logistico
+119,Centro de Datos - Tarea 119,Labor operativa #119 del area Centro de Datos,7.9,Soldadura:3;Electricidad Industrial:2,Sustancias Peligrosas;Redes Industriales,Centro de Datos
+120,Planta Quimica - Tarea 120,Labor operativa #120 del area Planta Quimica,4.5,Calibracion de Equipos:1,,Planta Quimica
+121,Centro Logistico - Tarea 121,Labor operativa #121 del area Centro Logistico,6.1,Programacion PLC:1;Calibracion de Equipos:3,Seguridad Electrica Nivel 3,Centro Logistico
+122,Laboratorio Industrial - Tarea 122,Labor operativa #122 del area Laboratorio Industrial,7.0,Manejo de Robots:2;Programacion PLC:2;Calibracion de Equipos:3,Sustancias Peligrosas;Seguridad Electrica Nivel 3,Laboratorio Industrial
+123,Planta Quimica - Tarea 123,Labor operativa #123 del area Planta Quimica,2.6,Manejo de Grua:3;Electricidad Industrial:1;Calibracion de Equipos:3,,Planta Quimica
+124,Planta Quimica - Tarea 124,Labor operativa #124 del area Planta Quimica,4.1,Redes Industriales:2;Programacion PLC:1,Redes Industriales;Seguridad Electrica Nivel 3,Planta Quimica
+125,Planta Quimica - Tarea 125,Labor operativa #125 del area Planta Quimica,3.6,Soldadura:2;Supervision de Planta:1,CCNA,Planta Quimica
+126,Centro de Datos - Tarea 126,Labor operativa #126 del area Centro de Datos,2.2,Seguridad en Alturas:2,Redes Industriales;Trabajo en Altura,Centro de Datos
+127,Planta Robotica - Tarea 127,Labor operativa #127 del area Planta Robotica,4.2,Manejo de Grua:2;Logistica de Almacen:3;Redes Industriales:1,,Planta Robotica
+128,Alta Tension - Tarea 128,Labor operativa #128 del area Alta Tension,4.8,Quimica Analitica:1;Mecanizado CNC:2,Redes Industriales,Alta Tension
+129,Planta Robotica - Tarea 129,Labor operativa #129 del area Planta Robotica,2.8,Electricidad Industrial:2;Logistica de Almacen:3,Redes Industriales,Planta Robotica
+130,Alta Tension - Tarea 130,Labor operativa #130 del area Alta Tension,2.7,Manejo de Grua:2,,Alta Tension
+131,Centro Logistico - Tarea 131,Labor operativa #131 del area Centro Logistico,7.8,Logistica de Almacen:3;Quimica Analitica:2,,Centro Logistico
+132,Planta Quimica - Tarea 132,Labor operativa #132 del area Planta Quimica,6.2,Quimica Analitica:3;Soldadura:3,Seguridad Electrica Nivel 3;Operador de Robots,Planta Quimica
+133,Alta Tension - Tarea 133,Labor operativa #133 del area Alta Tension,5.5,Logistica de Almacen:2,,Alta Tension
+134,Centro Logistico - Tarea 134,Labor operativa #134 del area Centro Logistico,3.2,Mecanizado CNC:3;Supervision de Planta:1,Seguridad Electrica Nivel 3;Redes Industriales,Centro Logistico
+135,Laboratorio Industrial - Tarea 135,Labor operativa #135 del area Laboratorio Industrial,7.4,Logistica de Almacen:2,Trabajo en Altura;Seguridad Electrica Nivel 3,Laboratorio Industrial
+136,Alta Tension - Tarea 136,Labor operativa #136 del area Alta Tension,6.8,Manejo de Grua:1;Manejo de Robots:3;Redes Industriales:2,Operador de Robots;CCNA,Alta Tension
+137,Alta Tension - Tarea 137,Labor operativa #137 del area Alta Tension,2.0,Quimica Analitica:1;Electricidad Industrial:2,,Alta Tension
+138,Centro de Datos - Tarea 138,Labor operativa #138 del area Centro de Datos,2.9,Supervision de Planta:3;Mecanizado CNC:2;Manejo de Grua:1,Seguridad Electrica Nivel 3,Centro de Datos
+139,Planta Robotica - Tarea 139,Labor operativa #139 del area Planta Robotica,3.7,Electricidad Industrial:3;Mecanizado CNC:3,Operador de Robots,Planta Robotica
+140,Planta Quimica - Tarea 140,Labor operativa #140 del area Planta Quimica,5.3,Programacion PLC:1;Mecanizado CNC:2,,Planta Quimica
+141,Centro Logistico - Tarea 141,Labor operativa #141 del area Centro Logistico,5.5,Logistica de Almacen:3;Redes Industriales:1,Sustancias Peligrosas;CCNA,Centro Logistico
+142,Planta Robotica - Tarea 142,Labor operativa #142 del area Planta Robotica,1.8,Soldadura:1,Sustancias Peligrosas,Planta Robotica
+143,Centro de Datos - Tarea 143,Labor operativa #143 del area Centro de Datos,5.1,Manejo de Robots:2;Manejo de Grua:3;Calibracion de Equipos:3,Operador de Robots;Sustancias Peligrosas,Centro de Datos
+144,Planta Quimica - Tarea 144,Labor operativa #144 del area Planta Quimica,6.8,Manejo de Grua:3,,Planta Quimica
+145,Centro Logistico - Tarea 145,Labor operativa #145 del area Centro Logistico,4.1,Quimica Analitica:3;Soldadura:2,,Centro Logistico
+146,Centro de Datos - Tarea 146,Labor operativa #146 del area Centro de Datos,3.8,Programacion PLC:2;Mecanizado CNC:3,CCNA;Seguridad Electrica Nivel 3,Centro de Datos
+147,Centro de Datos - Tarea 147,Labor operativa #147 del area Centro de Datos,7.8,Calibracion de Equipos:1,Trabajo en Altura;Operador de Robots,Centro de Datos
+148,Planta Robotica - Tarea 148,Labor operativa #148 del area Planta Robotica,6.8,Redes Industriales:3;Manejo de Robots:1,,Planta Robotica
+149,Centro Logistico - Tarea 149,Labor operativa #149 del area Centro Logistico,3.3,Logistica de Almacen:1,,Centro Logistico
+150,Centro de Datos - Tarea 150,Labor operativa #150 del area Centro de Datos,1.8,Soldadura:1;Quimica Analitica:3;Manejo de Robots:2,,Centro de Datos

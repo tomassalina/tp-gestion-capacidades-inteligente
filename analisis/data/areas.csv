@@ -1,0 +1,7 @@
+id,nombre,credenciales_obligatorias,franjas
+Planta Robotica,Planta Robotica,,Manana:4;Tarde:3;Noche:7
+Centro de Datos,Centro de Datos,Redes Industriales;Operador de Robots,Manana:6;Tarde:5;Noche:4
+Alta Tension,Alta Tension,,Manana:4;Tarde:9;Noche:3
+Laboratorio Industrial,Laboratorio Industrial,Operador de Robots;Seguridad Electrica Nivel 3,Manana:4;Tarde:6;Noche:6
+Centro Logistico,Centro Logistico,Operador de Robots,Manana:6;Tarde:9;Noche:6
+Planta Quimica,Planta Quimica,Sustancias Peligrosas;CCNA,Manana:7;Tarde:3;Noche:5
