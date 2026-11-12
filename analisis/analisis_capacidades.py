@@ -311,6 +311,87 @@ def analizar_franjas_areas(areas, labores, asignaciones, conflictos):
     }
 
 
+# ---------------------------------------------------------------------------
+# Impacto economico
+# ---------------------------------------------------------------------------
+# Estos supuestos NO salen del sistema: son estimaciones externas declaradas aca
+# para poder traducir las metricas tecnicas a dinero. Cambiar un supuesto aca
+# recalcula toda la seccion economica, asi los numeros del pitch son auditables.
+SUPUESTOS = {
+    "costo_hora_trabajador_usd": 12.0,      # costo laboral cargado de un tecnico industrial
+    "costo_hora_supervisor_usd": 18.0,      # idem para quien arma el cronograma
+    "horas_planificacion_manual_semana": 6.0,
+    "supervisores_que_planifican": 10,      # los 10 supervisores del dataset
+    "reduccion_tiempo_planificacion": 0.80,
+    "costo_evento_cumplimiento_usd": 5000.0,  # sancion o incidente por operar sin credencial
+    "probabilidad_evento_deriva_en_costo": 0.10,
+    "precio_saas_usd_trabajador_mes": 8.0,
+    "semanas_por_anio": 52,
+}
+
+
+def estimar_impacto_economico(trabajadores, conflictos, carga):
+    s = SUPUESTOS
+    horas_semana = np.array([t["horas_maximas_semana"] for t in trabajadores.values()])
+    capacidad_semanal_horas = float(horas_semana.sum())
+    capacidad_anual_horas = capacidad_semanal_horas * s["semanas_por_anio"]
+    masa_salarial_anual = capacidad_anual_horas * s["costo_hora_trabajador_usd"]
+    valor_punto_utilizacion = masa_salarial_anual * 0.01
+
+    semanas = carga["n_semanas_simuladas"]
+    horas_sin_asignar = capacidad_semanal_horas * semanas * (1 - carga["utilizacion_promedio"] / 100)
+    costo_capacidad_sin_asignar = horas_sin_asignar * s["costo_hora_trabajador_usd"]
+
+    bloqueos = len([c for c in conflictos if c["tipo_conflicto"] == "CREDENCIAL_VENCIDA"])
+    bloqueos_anualizados = bloqueos / semanas * s["semanas_por_anio"]
+    ahorro_cumplimiento = (
+        bloqueos_anualizados
+        * s["probabilidad_evento_deriva_en_costo"]
+        * s["costo_evento_cumplimiento_usd"]
+    )
+
+    horas_planificacion_anuales = (
+        s["horas_planificacion_manual_semana"] * s["supervisores_que_planifican"] * s["semanas_por_anio"]
+    )
+    ahorro_planificacion = (
+        horas_planificacion_anuales * s["reduccion_tiempo_planificacion"] * s["costo_hora_supervisor_usd"]
+    )
+
+    # Objetivo conservador de primer anio: recuperar 1 punto de utilizacion.
+    ahorro_utilizacion = valor_punto_utilizacion
+    valor_anual_total = ahorro_utilizacion + ahorro_cumplimiento + ahorro_planificacion
+
+    costo_saas_anual = len(trabajadores) * s["precio_saas_usd_trabajador_mes"] * 12
+    retorno = valor_anual_total / costo_saas_anual if costo_saas_anual else 0
+
+    print("\n=== Impacto economico estimado (planta tipo del piloto) ===")
+    print(f"Capacidad contratada: {capacidad_semanal_horas:,.0f} h/semana | {capacidad_anual_horas:,.0f} h/anio")
+    print(f"Masa salarial anual en juego: USD {masa_salarial_anual:,.0f}")
+    print(f"Valor de 1 punto de utilizacion: USD {valor_punto_utilizacion:,.0f}/anio")
+    print(f"Capacidad pagada y no asignada en el piloto ({semanas} semanas): USD {costo_capacidad_sin_asignar:,.0f}")
+    print(f"Ahorro por cumplimiento (bloqueos de credencial): USD {ahorro_cumplimiento:,.0f}/anio")
+    print(f"Ahorro por planificacion automatizada: USD {ahorro_planificacion:,.0f}/anio")
+    print(f"Valor anual total estimado: USD {valor_anual_total:,.0f}")
+    print(f"Costo del SaaS: USD {costo_saas_anual:,.0f}/anio -> retorno {retorno:.1f}x")
+
+    return {
+        "supuestos": s,
+        "capacidad_semanal_horas": round(capacidad_semanal_horas),
+        "capacidad_anual_horas": round(capacidad_anual_horas),
+        "masa_salarial_anual_usd": round(masa_salarial_anual),
+        "valor_punto_utilizacion_usd": round(valor_punto_utilizacion),
+        "horas_sin_asignar_periodo": round(horas_sin_asignar),
+        "costo_capacidad_sin_asignar_usd": round(costo_capacidad_sin_asignar),
+        "bloqueos_credencial_anualizados": round(bloqueos_anualizados),
+        "ahorro_cumplimiento_anual_usd": round(ahorro_cumplimiento),
+        "ahorro_planificacion_anual_usd": round(ahorro_planificacion),
+        "ahorro_utilizacion_anual_usd": round(ahorro_utilizacion),
+        "valor_anual_total_usd": round(valor_anual_total),
+        "costo_saas_anual_usd": round(costo_saas_anual),
+        "retorno_veces": round(retorno, 1),
+    }
+
+
 def main():
     trabajadores = leer_trabajadores()
     labores = leer_labores()
@@ -318,6 +399,7 @@ def main():
     asignaciones = leer_asignaciones()
     conflictos = leer_conflictos()
 
+    carga = analizar_carga_laboral(trabajadores, labores, asignaciones)
     resumen = {
         "dataset": {
             "trabajadores": len(trabajadores),
@@ -326,9 +408,10 @@ def main():
             "asignaciones": len(asignaciones),
             "conflictos": len(conflictos),
         },
-        "carga_laboral": analizar_carga_laboral(trabajadores, labores, asignaciones),
+        "carga_laboral": carga,
         "credenciales": analizar_credenciales(trabajadores, conflictos, asignaciones),
         "franjas_areas": analizar_franjas_areas(areas, labores, asignaciones, conflictos),
+        "impacto_economico": estimar_impacto_economico(trabajadores, conflictos, carga),
     }
 
     ruta_resumen = os.path.join(DIRECTORIO_ANALISIS, "resumen_metricas.json")

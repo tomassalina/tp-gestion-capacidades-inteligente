@@ -66,5 +66,31 @@
       "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\05_heatmap_area_franja.png",
       "C:\\Users\\liam.boix\\Desktop\\Estructura de datos\\tp-gestion-capacidades-inteligente\\analisis\\graficos\\06_barras_rechazos_franja.png"
     ]
+  },
+  "impacto_economico": {
+    "supuestos": {
+      "costo_hora_trabajador_usd": 12.0,
+      "costo_hora_supervisor_usd": 18.0,
+      "horas_planificacion_manual_semana": 6.0,
+      "supervisores_que_planifican": 10,
+      "reduccion_tiempo_planificacion": 0.8,
+      "costo_evento_cumplimiento_usd": 5000.0,
+      "probabilidad_evento_deriva_en_costo": 0.1,
+      "precio_saas_usd_trabajador_mes": 8.0,
+      "semanas_por_anio": 52
+    },
+    "capacidad_semanal_horas": 8110,
+    "capacidad_anual_horas": 421720,
+    "masa_salarial_anual_usd": 5060640,
+    "valor_punto_utilizacion_usd": 50606,
+    "horas_sin_asignar_periodo": 92162,
+    "costo_capacidad_sin_asignar_usd": 1105944,
+    "bloqueos_credencial_anualizados": 100,
+    "ahorro_cumplimiento_anual_usd": 49833,
+    "ahorro_planificacion_anual_usd": 44928,
+    "ahorro_utilizacion_anual_usd": 50606,
+    "valor_anual_total_usd": 145368,
+    "costo_saas_anual_usd": 19200,
+    "retorno_veces": 7.6
   }
 }
